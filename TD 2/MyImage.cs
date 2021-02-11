@@ -23,7 +23,18 @@ namespace TD_2
         #endregion
 
         #region PUBLIC
-
+            
+               public int Convertir_Endian_To_Int(byte[]tab, int tailleTab, int valMin)
+        {
+            int val=0;
+            for(int index=0;index<tailleTab;index++)
+            {
+                val += tab[valMin+ index]*(int)Math.Pow(256,index);
+            }
+            return val;
+        }
+        
+        
         public MyImage(string myfile)
         {
             byte[] file = File.ReadAllBytes(myfile);
@@ -41,37 +52,22 @@ namespace TD_2
                 throw new ArgumentException("Le fichier fournit n'est pas un Bitmap");
             }
             Console.WriteLine("C'est un bitmap");
-            size = 0;
-            for (int index = 0; index < 4; index++)
-            {
-                size += file[index + 2] * (int)Math.Pow(256, index);
-            }
 
-            offset = 0;
-            for (int index = 0; index < 4; index++)
-            {
-                offset += file[index + 10] * (int)Math.Pow(256, index);
-            }
+            size=Convertir_Endian_To_Int(file,4,2);
+
+            offset=Convertir_Endian_To_Int(file,4,10);
             Console.WriteLine($"size : {size}");
             Console.WriteLine($"offset : {offset}");
 
             width = 0;
-            for (int index = 0; index < 4; index++)
-            {
-                width += file[index + 18] * (int)Math.Pow(256, index);
-            }
+            width=Convertir_Endian_To_Int(file,4,18);
 
-            height = 0;
-            for (int index = 0; index < 4; index++)
-            {
-                height += file[index + 22] * (int)Math.Pow(256, index);
-            }
 
-            depth = 0;
-            for (int index = 0; index < 3; index++)
-            {
-                depth += file[index + 28] * (int)Math.Pow(256, index);
-            }
+
+            height=Convertir_Endian_To_Int(file,4,22);
+
+            depth = Convertir_Endian_To_Int(file,3,28);
+
 
             Console.WriteLine($"width : {width}");
             Console.WriteLine($"height : {height}");

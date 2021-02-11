@@ -13,7 +13,7 @@ namespace TD_2
     {
         static void Main(string[] args)
         {
-            new MyImage(".\\w3c_home.bmp");
+            new MyImage(".\\smoltriangle.bmp");
             Console.ReadLine();
         }
     }

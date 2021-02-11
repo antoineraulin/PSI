@@ -113,7 +113,8 @@ namespace TD_2
                     if(depth / 8 == 3)
                     {
                         //RGB
-                        //data[i / (width * (depth / 8)), j-i] = new RGB(file[j], file[j+1], file[j+2]);
+                        Console.WriteLine($"height:{height}|width:{width}|i:{i}|i / (width * (depth / 8)):{i / (width * (depth / 8))}|");
+                        data[i / (width * (depth / 8)), (j-i)/(depth / 8)] = new RGB(file[j], file[j+1], file[j+2]);
                     }
 
 

@@ -13,7 +13,8 @@ namespace TD_2
     {
         static void Main(string[] args)
         {
-            new MyImage(".\\smoltriangle.bmp");
+            MyImage test = new MyImage(".\\sharp.bmp");
+            test.From_Image_To_File(".\\sharp_out.bmp");
             Console.ReadLine();
         }
     }

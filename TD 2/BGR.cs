@@ -5,7 +5,7 @@
     /// </summary>
     /// <remarks>
     /// On utilise ici une struct plutôt qu'une class parce qu'on a pas besoin de méthodes ici,
-    /// et surtout parce qu'une classe est passé par référence alors qu'un struct est passé par une copie ce qui peut eviter certains problèmes
+    /// et surtout parce qu'une classe est passé par référence alors qu'un struct est passé par une copie ce qui peut éviter certains problèmes
     /// </remarks>
     /// <remarks>
     /// Notre pixel est de type BGR et non pas RGB parce qu'en BMP les pixels sont codés de cette manière

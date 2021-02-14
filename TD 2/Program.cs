@@ -13,8 +13,11 @@ namespace TD_2
     {
         static void Main(string[] args)
         {
-            MyImage test = new MyImage(".\\sharp.bmp");
-            test.From_Image_To_File(".\\sharp_out.bmp");
+            MyImage test = new MyImage(".\\fox.bmp");
+            Bgr[,] rotation = test.Rotation(30);
+            
+            
+            //test.From_Image_To_File(".\\sharp_out.bmp");
             Console.ReadLine();
         }
     }

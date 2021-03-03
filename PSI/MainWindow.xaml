@@ -1,0 +1,162 @@
+﻿<Window x:Class="PSI.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:PSI"
+        mc:Ignorable="d"
+        Title="PSI" Height="450" Width="800" MinHeight="450" MinWidth="800">
+    <DockPanel>
+        <Menu DockPanel.Dock="Top" Background="WhiteSmoke">
+            <MenuItem Header="_Fichier">
+                <MenuItem Header="_Ouvrir une image" Click="OpenFile_Click">
+                    <MenuItem.Icon>
+                        <Image Source="assets/open_image.png" Width="18" Height="18" />
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="_Image de la banque d'images..." >
+                    <MenuItem.Icon>
+                        <Image Source="assets/image_folder.png" Width="18" Height="18" />
+                    </MenuItem.Icon>
+                    <MenuItem Header="Test.bmp"/>
+                    <MenuItem Header="fox.bmp"/>
+                    <MenuItem Header="w3c_home.bmp"/>
+                </MenuItem>
+                <MenuItem Header="_Sauvegarder">
+                    <MenuItem.Icon>
+                        <Image Source="save.png" Width="18" Height="18" />
+                    </MenuItem.Icon>
+                </MenuItem>
+                <Separator />
+                <MenuItem Header="_Quitter">
+                    <MenuItem.Icon>
+                        <Image Source="assets/close.png" Width="18" Height="18" />
+                    </MenuItem.Icon>
+                </MenuItem>
+            </MenuItem>
+        </Menu>
+        <Grid>
+            <Grid Name="MainMenu" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="50" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="20"/>
+                </Grid.RowDefinitions>
+                <Label Content="Ouvrir une image personnalisée" FontSize="16" HorizontalAlignment="Center" Margin="10,10,0,0" VerticalAlignment="Top"/>
+                <Label Content="Ouvrir une image de la banque d'images" FontSize="16" Grid.Column="1" HorizontalAlignment="Center" Margin="10,10,0,0" VerticalAlignment="Top"/>
+                <Border Cursor="Hand" Grid.Row="1" UIElement.PreviewMouseDown="OpenFile_Click" Name="ImagePanel" DragOver="Drag_Hover_Handler" Drop="Drop_Handler" AllowDrop="true" Background="White" BorderThickness="2,2,2,2" CornerRadius="30,30,30,30" Margin="16,16,16,16">
+                    <Border.BorderBrush>
+                        <VisualBrush>
+                            <VisualBrush.Visual>
+                                <Rectangle StrokeDashArray="4 2" Stroke="Black" StrokeThickness="2" RadiusX="30" RadiusY="30"
+                                   Width="{Binding RelativeSource={RelativeSource AncestorType={x:Type Border}}, Path=ActualWidth}"
+                                   Height="{Binding RelativeSource={RelativeSource AncestorType={x:Type Border}}, Path=ActualHeight}"/>
+                            </VisualBrush.Visual>
+                        </VisualBrush>
+                    </Border.BorderBrush>
+                    <Grid VerticalAlignment="Stretch"  HorizontalAlignment="Stretch" Grid.Column="0" Grid.Row="1" >
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" >
+                            <Label Content="Cliquer pour choisir une image"/>
+                            <Label Content="Ou glisser-déposer l'image ici"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+                <Grid Grid.ColumnSpan="2" HorizontalAlignment="Stretch"  Grid.Row="2" VerticalAlignment="Stretch" Background="DodgerBlue">
+                    <Label Content="Prêt" FontSize="13" Height="20" Padding="8,0,0,0" Foreground="White"/>
+                </Grid>
+                <ListView Grid.Column="1" Grid.Row="1" Name="imageLibraryList" >
+                    <ListView.View>
+                        <GridView>
+                            <GridViewColumn Header="Image" Width="160" >
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Image RenderOptions.BitmapScalingMode="NearestNeighbor" Source="{Binding ImageUri}" />
+                                            </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <GridViewColumn Header="Nom" Width="100" DisplayMemberBinding="{Binding Name}" />
+                            <GridViewColumn Header="Taille" Width="100" DisplayMemberBinding="{Binding Size}" />
+                        </GridView>
+                    </ListView.View>
+                </ListView>
+
+            </Grid>
+            <Grid Name="ImageEditor" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Visibility="Collapsed"  >
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="250" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="20"/>
+                </Grid.RowDefinitions>
+                <Grid Grid.ColumnSpan="2" HorizontalAlignment="Stretch"  Grid.Row="1" VerticalAlignment="Stretch" Background="DodgerBlue">
+                    <Label Name="BottomBarLeftLabel" Content="Prêt - Test.bmp" FontSize="13" Height="20" Padding="8,0,0,0" Foreground="White"/>
+                </Grid>
+                <Border Background="White">
+                    <Image Name="ImagePreview" RenderOptions.BitmapScalingMode="NearestNeighbor" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Source="fox.bmp"/>
+                </Border>
+                <Grid Grid.Column="1" HorizontalAlignment="Stretch"  Grid.Row="0" VerticalAlignment="Stretch" Background="WhiteSmoke">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="100" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Image HorizontalAlignment="Stretch"  VerticalAlignment="Stretch" Source="assets/fake_histo.jpg" Stretch="Fill"/>
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+                            <Grid Height="30" Cursor="Hand">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="30" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Image Source="assets/flip_vertical.png" Height="22" />
+                                <Label Grid.Column="1" Content="Miroir vertical" HorizontalAlignment="Left" VerticalAlignment="Center"  />
+                            </Grid>
+                            <Grid Height="30" Cursor="Hand">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="30" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Image Source="assets/rotate.png" Height="22" />
+                                <Label Grid.Column="1" Content="Rotation" HorizontalAlignment="Left" VerticalAlignment="Center"  />
+                            </Grid>
+                            <Grid Height="30" Cursor="Hand">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="30" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Image Source="assets/grayscale.png" Height="22" />
+                                <Label Grid.Column="1" Content="Nuance de gris" HorizontalAlignment="Left" VerticalAlignment="Center"  />
+                            </Grid>
+                            <Grid Height="30" Cursor="Hand">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="30" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Image Source="bw.png" Height="24" />
+                                <Label Grid.Column="1" Content="Noir et Blanc" HorizontalAlignment="Left" VerticalAlignment="Center"  />
+                            </Grid>
+                            <Grid Height="30" Cursor="Hand">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="30" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Image Source="assets/resize.png" Height="24" />
+                                <Label Grid.Column="1" Content="Redimensionner" HorizontalAlignment="Left" VerticalAlignment="Center"  />
+                            </Grid>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </Grid>
+        </Grid>
+    </DockPanel>
+
+
+</Window>

@@ -9,10 +9,17 @@ using System.Drawing.Drawing2D;
 using System.IO;
 using System.Runtime.InteropServices;
 
-namespace TD_2
+namespace TD_3
 {
     class MyImage
     {
+        
+        // todo
+        // - faire la transformation en noir et blanc en plus du nuance de gris
+        // - Rotation
+        // - Miroir
+        
+        
         #region PRIVATE
 
         // définition des variables privées de l'objet
@@ -88,6 +95,7 @@ namespace TD_2
         /// </summary>
         /// <param name="myfile">emplacement du BMP</param>
         /// <exception cref="ArgumentException">Retourne une erreur si le fichier fournit n'est pas un Bitmap</exception>
+        /// <exception cref="ArgumentException">Retourne une erreur si l"image </exception>
         public MyImage(string myfile)
         {
             byte[] file = File.ReadAllBytes(myfile);
@@ -119,9 +127,12 @@ namespace TD_2
 
             width = Convertir_Endian_To_Int(file, 4, 18);
             height = Convertir_Endian_To_Int(file, 4, 22);
-            depth = Convertir_Endian_To_Int(file, 3, 28);
+            depth = Convertir_Endian_To_Int(file, 2, 28);
             realImageSize = Convertir_Endian_To_Int(file, 4, 34);
-
+            if (depth != 24)
+            {
+                throw new ArgumentException("la profondeur de l'image doit être de 24 bits ");
+            }
 
             Console.WriteLine($"width : {width}");
             Console.WriteLine($"height : {height}");
@@ -142,13 +153,10 @@ namespace TD_2
             {
                 for (int j = i; j < i + width * (depth / 8); j += depth / 8)
                 {
-                    // Console.Write(file[j] + " ");
-                    // Console.Write(file[j + 1] + " ");
-                    // Console.Write(file[j + 2] + " ");
 
                     if (depth / 8 == 3)
                     {
-                        //RGB
+
                         double di = i - offset;
                         double dd = (width * (depth / 8));
                         int x = (int)Math.Round(di / dd);
@@ -158,8 +166,25 @@ namespace TD_2
                     }
                 }
 
-                Console.WriteLine();
+                
             }
+        }
+
+        public MyImage(Bgr[,] tab, int width, int height)
+        {
+            data = tab;
+            this.width = width;
+            Console.WriteLine(width);
+            int widthPlusPlus = (width*3 + 3) & ~0x03;
+            this.height = height;
+            Console.WriteLine(widthPlusPlus);
+            Console.WriteLine(height);
+            size = 14 + 40 + widthPlusPlus* height;
+            Console.WriteLine(size);
+            offset = 54; //offset de base
+            realImageSize = tab.Length * 3;
+            depth = 24;
+
         }
 
         /// <summary>
@@ -261,24 +286,27 @@ namespace TD_2
             }
 
             // Pixel Array
+            //int width2 = width;
             int widthPlusPlus = 4 * (((width * (depth / 8)) + 4 / 2) / 4);
+            //int widthPlusPlus = (width + 3) & ~0x03;
             for (int y = 0; y < height; y++)
             {
-                for (int x = 0; x < widthPlusPlus - (depth / 8); x += (depth / 8))
+                for (int x = 0; x < width; x ++)
                 {
                     if (x / (depth / 8) < width)
                     {
-                        byte[] pixel = { (byte)data[y, x / (depth / 8)].B, (byte)data[y, x / (depth / 8)].G, (byte)data[y, x / (depth / 8)].R };
-                        file[offset + y * widthPlusPlus + x] = pixel[0];
-                        file[offset + y * widthPlusPlus + x + 1] = pixel[1];
-                        file[offset + y * widthPlusPlus + x + 2] = pixel[2];
+                        //byte[] pixel = { (byte), (byte)data[y, x].G, (byte)data[y, x].R };
+                        int pos = offset + y * widthPlusPlus + x * 3;
+                        file[pos] = (byte)data[y, x].B;
+                        file[pos + 1] = (byte)data[y, x].G;
+                        file[pos + 2] = (byte)data[y, x].R;
                     }
                     else
                     {
                         // on est dans les pixels "fantômes" qui sont la juste pour que le nombre de byte dans la ligne soit divisible par 4
-                        file[offset + y * widthPlusPlus + x] = 0;
-                        file[offset + y * widthPlusPlus + x + 1] = 0;
-                        file[offset + y * widthPlusPlus + x + 2] = 0;
+                        file[offset + y * widthPlusPlus + x*3] = 0;
+                        file[offset + y * widthPlusPlus + x*3 + 1] = 0;
+                        file[offset + y * widthPlusPlus + x*3 + 2] = 0;
                     }
                 }
             }
@@ -287,9 +315,11 @@ namespace TD_2
         }
 
 
-        public static void From_Tableau_To_File(Bgr[,] tab, int width, int height, string output)
+        public static void From_Tableau_To_File(Bgr[,] tab, string output)
         {
-            int size = 14 + 40 + tab.Length*3+1000;
+            int width = tab.GetLength(1);
+            int height = tab.GetLength(0);
+            int size = 14 + 40 + tab.Length*3;
             byte[] file = new byte[size];
             // recreate the header (from 0 to 14)
             // type : BMP
@@ -411,7 +441,7 @@ namespace TD_2
         /// <summary>
         /// transforme l'image en nuance de gris
         /// </summary>
-        public void passageNegatif()
+        public void ToGrayscale()
         {
             int widthPlusPlus = 4 * (((width * (depth / 8)) + 4 / 2) / 4);
             for (int index = 0; index < height; index++)
@@ -433,95 +463,96 @@ namespace TD_2
             }
         }
 
-        public Bgr[,]RetrecissementBis(int ratio)
+        /// <summary>
+        /// transforme l'image en noir et blanc
+        /// </summary>
+        public void ToBW()
         {
-            if (ratio < 1 || ratio > width || ratio > height)
+            int widthPlusPlus = 4 * (((width * (depth / 8)) + 4 / 2) / 4);
+            for (int index = 0; index < height; index++)
             {
-                throw new ArgumentException("Ce ratio de rétrécissement est incorrect");
-            }
-
-            int newWidth = width / ratio;
-            int newHeigth = height / ratio;
-            Bgr[,] output = new Bgr[newHeigth, newWidth];
-            for(int index=0;index<width;index+=ratio)
-            {
-                for(int index1=0;index1<height;index1+=ratio)
+                for (int index1 = 0; index1 < widthPlusPlus / (depth / 8); index1++)
                 {
-                    try
+                    if (index1 / (depth / 8) < width)
                     {
-                        Bgr pixel = new Bgr(data[index1, index].B, data[index1, index].G, data[index1, index].R);
-                        output[index1 / ratio, index / ratio] = pixel;
-                    }
-                    catch (Exception e)
-                    {
-
-                    }
-                    
-                }
-            }
-            AfficherImage(output);
-            From_Tableau_To_File(output, newWidth, newHeigth, ".\\retrecie.bmp");
-
-            return output;
-        }
-        public Bgr[,] Retrecissement(int ratio)
-        {
-            if(ratio<1 || ratio>width || ratio > height)
-            {
-                throw new ArgumentException("Ce ratio de rétrécissement est incorrect") ;
-            }
-            
-            int newWidth = width / ratio;
-            int newHeight = height/ ratio;
-            int largeurDiv = width / newWidth;
-            int hauteurDiv = height / newHeight;
-            int newWidthPlusPlus = 4 * (((newWidth * 3) + 4 / 2) / 4);
-            int widthPlusPlus = 4 * (((width * 3) + 4 / 2) / 4);
-            Bgr[,] output = new Bgr[newHeight, newWidthPlusPlus];
-            for(int index=0;index<newWidthPlusPlus;index++)
-            {
-                for(int index1=0;index1<newHeight;index1++)
-                {
-
-                    int avgR = 0;
-                    int avgB = 0;
-                    int avgG = 0;
-                    int n = 0;
-                    for (int i= largeurDiv*index1; i< largeurDiv * (index1+1) && i < widthPlusPlus; i+=largeurDiv)
-                    {
-                        for(int j= hauteurDiv * index; j< hauteurDiv * (index + 1) && j < height; j+=hauteurDiv)
+                        int avg = (data[index, index1].R + data[index, index1].G + data[index, index1].B) / 3;// on calcule
+                        Bgr pixel = pixel = new Bgr(255, 255, 255);
+                        if (avg < 128)
                         {
-                            
-                                avgR += data[j, i].R;
-                                avgB += data[j, i].B;
-                                avgG += data[j, i].G;
-                                n++;
-                            
-
+                            pixel = new Bgr(0, 0, 0);
                         }
+                        
+                        data[index, index1] = pixel;
                     }
-
-                    try
+                    else
                     {
-                        avgR = avgR / n;
-                        avgG = avgG / n;
-                        avgB = avgB / n;
-                        output[index, index1] = new Bgr(avgB, avgG, avgR);
+                        Bgr pixel = new Bgr(0, 0, 0);
+                        data[index, index1] = pixel;
                     }
-                    catch (Exception e)
-                    {
-
-                    }
-
                 }
             }
-            AfficherImage(output);
-            From_Tableau_To_File(output,newWidth, newHeight, ".\\retrecie.bmp" );
-
-            return output;
         }
 
-        public Bgr[,] EffetMiroir()
+
+
+        public MyImage Resize(int newWidth, int newHeight)
+        {
+            Bgr[,] output = new Bgr[newHeight, newWidth];
+            for (int y = 0; y < newHeight; y++)
+            {
+                for (int x = 0; x < newWidth; x++)
+                {
+                    // on fait une bête règle de trois pour savoir à quel pixel de l'image originale notre pixel correspond.
+                    int yInOriginal = (y * height) / newHeight; // le fait de calculer seulement avec des int permet d'arrondir strictement à l'inférieur, et donc on ne sors pas de l'image originale.
+                    int xInOriginal = (x * width) / newWidth;
+                    output[y, x] = data[yInOriginal, xInOriginal];
+                }
+            }
+
+            return new MyImage(output, newWidth, newHeight);
+        }
+
+        public MyImage ResizeAntialiasing(int newWidth, int newHeight)
+        {
+            Bgr[,] output = new Bgr[newHeight, newWidth];
+            for (int y = 0; y < newHeight; y++)
+            {
+                for (int x = 0; x < newWidth; x++)
+                {
+                    
+                    double yInOriginal = (((double)y * (double)height) / (double)newHeight);
+                    double xInOriginal = (((double)x * (double)width) / (double)newWidth);
+                    int strInfY = (int) yInOriginal;
+                    int strInfX = (int) xInOriginal;
+                    double yRemainder = yInOriginal - (double) strInfY;
+                    double xRemainder = xInOriginal - (double)strInfX;
+                    double avg = (yRemainder + xRemainder) / 2;
+                    int blue, red, green;
+                    if(strInfY + 1 < height && strInfX + 1 < width)
+                    {
+                        blue = (int) ((data[strInfY, strInfX].B + avg * data[strInfY + 1, strInfX + 1].B) /
+                                          (1.0 + avg));
+                        red = (int) ((data[strInfY, strInfX].R + avg * data[strInfY + 1, strInfX + 1].R) /
+                                         (1.0 + avg)); 
+                        green = (int) ((data[strInfY, strInfX].G + avg * data[strInfY + 1, strInfX + 1].G) /
+                                                                      (1.0 + avg));
+                    }
+                    else
+                    {
+                        blue = data[strInfY, strInfX].B;
+                        red = data[strInfY, strInfX].R;
+                        green = data[strInfY, strInfX].G;
+                    }
+
+                    Bgr pixel = new Bgr(blue, green, red);
+                    output[y, x] = pixel;
+                }
+            }
+
+            return new MyImage(output, newWidth, newHeight);
+        }
+
+        public MyImage EffetMiroir()
         {
             Bgr[,] output = new Bgr[height, width];
             for (int index = 0; index < width; index++)
@@ -533,42 +564,88 @@ namespace TD_2
 
                 }
             }
+            From_Tableau_To_File(output, ".\\Miroir.bmp");
 
-            //AfficherImage(output);
-            From_Tableau_To_File(output, width, height, ".\\Miroir.bmp");
-
-            return output;
+            return new MyImage(output, width, height);
         }
 
-        public Bgr[,] Rotation(int angle)
+        public double[] ToPolarCoordinates(double y, double x,double theta = 0)
         {
-            Bgr[,] output = new Bgr[height, width];
-            double[] rotation =new double[2];
-            rotation[0] = Math.Cos(angle / 180 * Math.PI);
-            rotation[1] = Math.Sin(angle / 180 * Math.PI);
+            double radius = Math.Sqrt((x * x) + (y * y));
+            double angle = Math.Atan2(y, x);
+            double[] res = {angle+theta, radius};
+            return res;
+        }
 
-            for (int y = 0; y < height; y++)
+        public double[] ToCartesianCoordinates(double[] polar)
+        {
+            double[] res = {polar[1] * Math.Sin(polar[0]), polar[1] * Math.Cos(polar[0]) };
+            return res;
+        }
+
+        /// <summary>
+        /// Permet d'appliquer un angle de rotation sur l'image
+        /// </summary>
+        /// <param name="angle">angle de rotation, dans le sens horaire, en radian si le paramètre radian est vrai (par défaut), en degré sinon</param>
+        /// <param name="radian">définit si l'angle donné est en radian ou en degré</param>
+        /// <returns>Retourne l'image après rotation</returns>
+        public MyImage RotationV2(double angle, bool radian=true)
+        {
+            // conversion degré vers radian
+            if (!radian) angle = angle * Math.PI / 180;
+
+            // définissons le centre de rotation au centre de l'image d'origine
+            double y0 = height / 2.0;
+            double x0 = width / 2.0;
+
+            // trouvons la taille de l'image après rotation pour que l'image soit contenu entièrement dans le cadre
+            double[] topLeftCorner = ToCartesianCoordinates(ToPolarCoordinates(0, 0, angle));
+            double[] topRightCorner = ToCartesianCoordinates(ToPolarCoordinates(0, width - 1, angle));
+            double[] bottomRightCorner = ToCartesianCoordinates(ToPolarCoordinates(height - 1, width - 1, angle));
+            double[] bottomLeftCorner = ToCartesianCoordinates(ToPolarCoordinates(height - 1, 0, angle));
+            double[][] corners = { topLeftCorner, topRightCorner, bottomLeftCorner, bottomRightCorner };
+            double maxY = -9999999.0;
+            double minY = 9999999.0;
+            double maxX = -9999999.0;
+            double minX = 9999999.0;
+            foreach (double[] corner in corners)
             {
-                for (int x = 0; x < width; x++)
+                if (corner[0] > maxY) maxY = corner[0];
+                if (corner[1] > maxX) maxX = corner[1];
+                if (corner[0] < minY) minY = corner[0];
+                if (corner[1] < minX) minX = corner[1];
+            }
+            int newHeight = (int)(maxY - minY)+1;
+            int newWidth = (int) (maxX - minX)+1;
+            Console.WriteLine($"newHeight : {newHeight} | newWidth : {newWidth}");
+
+            // définissons le centre de rotation au centre de l'image d'arrivée
+            double y0prime = newHeight / 2.0;
+            double x0prime = newWidth / 2.0;
+
+            Bgr[,] output = new Bgr[newHeight, newWidth];
+            for (double y1 = 0.0; y1 < output.GetLength(0); y1 += 1)
+            {
+                for (double x1 = 0.0; x1 < output.GetLength(1); x1 += 1)
                 {
-                    double[] pos = {x, y};
-                    IEnumerable<double> dotProducts = pos.Zip(rotation, (a, b) => a * b);
-                    double[] res = dotProducts.ToArray();
-                    Console.WriteLine($"x = {res[0]} | y = {res[1]} ");
-                    try
+                    // on choisit que les pixels vide seront remplis de noir :
+                    Bgr color = new Bgr(0, 0, 0);
+                    double[] polar = ToPolarCoordinates(y1 - y0prime, x1 - x0prime, -angle);
+                    double[] pixel = ToCartesianCoordinates(polar);
+                    int intX2 = (int)Math.Round(pixel[1] + x0, MidpointRounding.AwayFromZero);
+                    int intY2 = (int)Math.Round(pixel[0] + y0, MidpointRounding.AwayFromZero);
+                    if (intX2 >= 0 && intX2 < width && intY2 >= 0 && intY2 < height)
                     {
-                        output[(int) res[1], (int) res[0]] = data[y, x];
+                        color = data[intY2, intX2];
                     }
-                    catch (Exception e)
-                    {
-                        
-                    }
+
+                    output[(int) y1, (int) x1] = color;
                 }
             }
-            From_Tableau_To_File(output, width, height, ".\\rotation.bmp");
-            return output;
+
+            return new MyImage(output, newWidth, newHeight);
         }
-        
+
         public static void AfficherImage(Bgr[,] tab)
         {
             for (int y = 0; y < tab.GetLength(0); y++)

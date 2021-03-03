@@ -7,17 +7,15 @@ using System.Threading.Tasks;
 using System.Drawing.Imaging;
 
 
-namespace TD_2
+namespace TD_3
 {
     class Program
     {
         static void Main(string[] args)
         {
             MyImage test = new MyImage(".\\fox.bmp");
-            Bgr[,] rotation = test.Rotation(30);
-            
-            
-            //test.From_Image_To_File(".\\sharp_out.bmp");
+            test.ToBW();
+            test.From_Image_To_File(".\\bw.bmp");
             Console.ReadLine();
         }
     }

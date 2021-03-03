@@ -124,11 +124,15 @@ namespace TD_3
             Console.WriteLine($"size : {size}");
             Console.WriteLine($"offset : {offset}");
 
-
+            
             width = Convertir_Endian_To_Int(file, 4, 18);
             height = Convertir_Endian_To_Int(file, 4, 22);
             depth = Convertir_Endian_To_Int(file, 2, 28);
+            // on cherche l'entier divisible par 4 le plus proche du nombre de bytes dans la ligne
+            int widthPlusPlus = (width * 3 + 3) & ~0x03;
             realImageSize = Convertir_Endian_To_Int(file, 4, 34);
+            // Le format BMP autorise à mettre zero dans ce champ même si on a des données après l'image, on est obligé d'être sur du point d'arret des données de l'image.
+            if(realImageSize == 0) realImageSize = widthPlusPlus * height;
             if (depth != 24)
             {
                 throw new ArgumentException("la profondeur de l'image doit être de 24 bits ");
@@ -144,8 +148,7 @@ namespace TD_3
 
             Console.WriteLine("bytes image:");
 
-            // on cherche l'entier divisible par 4 le plus proche du nombre de bytes dans la ligne
-            int widthPlusPlus = 4 * (((width * (depth / 8)) + 4 / 2) / 4);
+            
 
             data = new Bgr[height, widthPlusPlus / (depth / 8)];
 
@@ -159,7 +162,7 @@ namespace TD_3
 
                         double di = i - offset;
                         double dd = (width * (depth / 8));
-                        int x = (int)Math.Round(di / dd);
+                        int x = (int)(di / dd);
                         int y = (j - i) / (depth / 8);
                         data[x, y] = new Bgr(file[j], file[j + 1], file[j + 2]);
 
@@ -168,21 +171,19 @@ namespace TD_3
 
                 
             }
+            
         }
 
         public MyImage(Bgr[,] tab, int width, int height)
         {
             data = tab;
             this.width = width;
-            Console.WriteLine(width);
             int widthPlusPlus = (width*3 + 3) & ~0x03;
             this.height = height;
-            Console.WriteLine(widthPlusPlus);
-            Console.WriteLine(height);
             size = 14 + 40 + widthPlusPlus* height;
             Console.WriteLine(size);
             offset = 54; //offset de base
-            realImageSize = tab.Length * 3;
+            realImageSize = widthPlusPlus* height;
             depth = 24;
 
         }
@@ -287,27 +288,26 @@ namespace TD_3
 
             // Pixel Array
             //int width2 = width;
-            int widthPlusPlus = 4 * (((width * (depth / 8)) + 4 / 2) / 4);
-            //int widthPlusPlus = (width + 3) & ~0x03;
+            int widthPlusPlus = (width*3 + 3) & ~0x03;
             for (int y = 0; y < height; y++)
             {
                 for (int x = 0; x < width; x ++)
                 {
                     if (x / (depth / 8) < width)
                     {
-                        //byte[] pixel = { (byte), (byte)data[y, x].G, (byte)data[y, x].R };
                         int pos = offset + y * widthPlusPlus + x * 3;
+                        //int pos = offset + y * width + x * 3;
                         file[pos] = (byte)data[y, x].B;
                         file[pos + 1] = (byte)data[y, x].G;
                         file[pos + 2] = (byte)data[y, x].R;
                     }
-                    else
+                    /*else
                     {
                         // on est dans les pixels "fantômes" qui sont la juste pour que le nombre de byte dans la ligne soit divisible par 4
                         file[offset + y * widthPlusPlus + x*3] = 0;
                         file[offset + y * widthPlusPlus + x*3 + 1] = 0;
                         file[offset + y * widthPlusPlus + x*3 + 2] = 0;
-                    }
+                    }*/
                 }
             }
 
@@ -441,9 +441,10 @@ namespace TD_3
         /// <summary>
         /// transforme l'image en nuance de gris
         /// </summary>
-        public void ToGrayscale()
+        public MyImage ToGrayscale()
         {
-            int widthPlusPlus = 4 * (((width * (depth / 8)) + 4 / 2) / 4);
+            Bgr[,] output = new Bgr[height, width];
+            int widthPlusPlus = (width * 3 + 3) & ~0x03;
             for (int index = 0; index < height; index++)
             {
                 for (int index1 = 0; index1 < widthPlusPlus/(depth / 8); index1++)
@@ -452,23 +453,26 @@ namespace TD_3
                     {
                         int avg = (data[index, index1].R + data[index, index1].G + data[index, index1].B) / 3;// on calcule
                         Bgr pixel = new Bgr(avg, avg, avg);
-                        data[index, index1] = pixel;
+                        output[index, index1] = pixel;
                     }
                     else
                     {
                         Bgr pixel = new Bgr(0, 0, 0);
-                        data[index, index1] = pixel;
+                        output[index, index1] = pixel;
                     }
                 }
             }
+
+            return new MyImage(output, width, height);
         }
 
         /// <summary>
         /// transforme l'image en noir et blanc
         /// </summary>
-        public void ToBW()
+        public MyImage ToBW()
         {
-            int widthPlusPlus = 4 * (((width * (depth / 8)) + 4 / 2) / 4);
+            Bgr[,] output = new Bgr[height, width];
+            int widthPlusPlus = (width * 3 + 3) & ~0x03;
             for (int index = 0; index < height; index++)
             {
                 for (int index1 = 0; index1 < widthPlusPlus / (depth / 8); index1++)
@@ -482,15 +486,16 @@ namespace TD_3
                             pixel = new Bgr(0, 0, 0);
                         }
                         
-                        data[index, index1] = pixel;
+                        output[index, index1] = pixel;
                     }
                     else
                     {
                         Bgr pixel = new Bgr(0, 0, 0);
-                        data[index, index1] = pixel;
+                        output[index, index1] = pixel;
                     }
                 }
             }
+            return new MyImage(output, width, height);
         }
 
 

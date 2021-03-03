@@ -13,9 +13,9 @@ namespace TD_3
     {
         static void Main(string[] args)
         {
-            MyImage test = new MyImage(".\\fox.bmp");
-            test.ToBW();
-            test.From_Image_To_File(".\\bw.bmp");
+            MyImage test = new MyImage(".\\sharp.bmp");
+            MyImage g = test.RotationV2(66, false);
+            g.From_Image_To_File(".\\resize.bmp");
             Console.ReadLine();
         }
     }

@@ -19,11 +19,12 @@ namespace PSI
     readonly struct LibraryImage
     {
        
-        public LibraryImage(String imageUri, String name, String size)
+        public LibraryImage(String imageUri)
         {
             ImageUri = imageUri;
-            Name = name;
-            Size = size;
+            MyImage image = new MyImage(imageUri);
+            Name = imageUri.Split('/').Last();
+            Size = $"{image.Height}x{image.Width}";
         }
 
         public String ImageUri { get; }

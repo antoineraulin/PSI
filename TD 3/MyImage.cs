@@ -315,129 +315,6 @@ namespace TD_3
         }
 
 
-        public static void From_Tableau_To_File(Bgr[,] tab, string output)
-        {
-            int width = tab.GetLength(1);
-            int height = tab.GetLength(0);
-            int size = 14 + 40 + tab.Length*3;
-            byte[] file = new byte[size];
-            // recreate the header (from 0 to 14)
-            // type : BMP
-            file[0] = 66; // B
-            file[1] = 77; // M
-
-            // size of the bitmap
-            byte[] bSize = Convertir_Int_To_Endian(size, 4);
-            for (int i = 0; i < 4; i++)
-            {
-                file[2 + i] = bSize[i];
-            }
-
-            // application that creates the image, we use 666 because why not
-            byte[] bAppId = Convertir_Int_To_Endian(666, 2);
-            for (int i = 0; i < 2; i++)
-            {
-                file[6 + i] = bAppId[i];
-            }
-
-            // same for the next two bytes
-            for (int i = 0; i < 2; i++)
-            {
-                file[8 + i] = bAppId[i];
-            }
-
-            // The offset, i.e. starting address, of the byte where the bitmap image data (pixel array) can be found.
-
-            byte[] bOffset = Convertir_Int_To_Endian(54, 4);
-            for (int i = 0; i < 2; i++)
-            {
-                file[10 + i] = bOffset[i];
-            }
-
-
-            // DIB Header
-
-            // taille du header
-            byte[] bSizeHeader = Convertir_Int_To_Endian(40, 4);
-            for (int index = 0; index < 4; index++)
-            {
-                file[14 + index] = bSizeHeader[index];
-            }
-
-            // largeur de l'image
-            byte[] bWidth = Convertir_Int_To_Endian(width, 4);
-            for (int index = 0; index < 4; index++)
-            {
-                file[18 + index] = bWidth[index];
-            }
-
-            // hauteur de l'image
-            byte[] bHeight = Convertir_Int_To_Endian(height, 4);
-            for (int index = 0; index < 4; index++)
-            {
-                file[22 + index] = bHeight[index];
-            }
-
-            //profondeur de l image
-            byte[] bDepth = Convertir_Int_To_Endian(24, 4);
-            for (int index = 0; index < 2; index++)
-            {
-                file[28 + index] = bDepth[index];
-            }
-
-            //nbr plans
-            file[26] = 1;
-            file[27] = 0;
-
-            //compression utilisée mise à 0 par défaut
-            for (int index = 0; index < 4; index++)
-            {
-                file[30 + index] = 0;
-                file[42 + index] = 0;
-                file[46 + index] = 0;
-            }
-
-            //taille image
-            int taille = tab.Length * 3;
-            byte[] imageSize = Convertir_Int_To_Endian(taille, 4);
-            for (int index = 0; index < 4; index++)
-            {
-                file[index + 34] = imageSize[index];
-            }
-
-            //resolution mise à 12000 because ca correspond à 300 ppi
-            byte[] imageRes = Convertir_Int_To_Endian(12000, 4);
-            for (int index = 0; index < 4; index++)
-            {
-                file[index + 38] = imageRes[index];
-            }
-
-            // Pixel Array
-            int widthPlusPlus = 4 * (((width * 3) + 4 / 2) / 4);
-            for (int y = 0; y < height; y++)
-            {
-                for (int x = 0; x < widthPlusPlus - 3; x += 3)
-                {
-                    if (x / 3 < width)
-                    {
-                        byte[] pixel = { (byte)tab[y, x / 3].B, (byte)tab[y, x / 3].G, (byte)tab[y, x / 3].R };
-                        file[54 + y * widthPlusPlus + x] = pixel[0];
-                        file[54 + y * widthPlusPlus + x + 1] = pixel[1];
-                        file[54 + y * widthPlusPlus + x + 2] = pixel[2];
-                    }
-                    else
-                    {
-                        // on est dans les pixels "fantômes" qui sont la juste pour que le nombre de byte dans la ligne soit divisible par 4
-                        file[54 + y * widthPlusPlus + x] = 0;
-                        file[54 + y * widthPlusPlus + x + 1] = 0;
-                        file[54 + y * widthPlusPlus + x + 2] = 0;
-                    }
-                }
-            }
-
-            File.WriteAllBytes(output, file);
-        }
-
         /// <summary>
         /// transforme l'image en nuance de gris
         /// </summary>
@@ -447,7 +324,7 @@ namespace TD_3
             int widthPlusPlus = (width * 3 + 3) & ~0x03;
             for (int index = 0; index < height; index++)
             {
-                for (int index1 = 0; index1 < widthPlusPlus/(depth / 8); index1++)
+                for (int index1 = 0; index1 < width; index1++)
                 {
                     if (index1 / (depth / 8) < width)
                     {
@@ -475,7 +352,7 @@ namespace TD_3
             int widthPlusPlus = (width * 3 + 3) & ~0x03;
             for (int index = 0; index < height; index++)
             {
-                for (int index1 = 0; index1 < widthPlusPlus / (depth / 8); index1++)
+                for (int index1 = 0; index1 < width; index1++)
                 {
                     if (index1 / (depth / 8) < width)
                     {
@@ -569,7 +446,6 @@ namespace TD_3
 
                 }
             }
-            From_Tableau_To_File(output, ".\\Miroir.bmp");
 
             return new MyImage(output, width, height);
         }
@@ -684,6 +560,192 @@ namespace TD_3
                 Console.WriteLine();
             }
         }
+
+        public MyImage calculateKernel(double[,] kernel, double[,] kernel2=null)
+        {
+            Bgr[,] output = new Bgr[height, width];
+            int kernelWidth = kernel.GetLength(1);
+            int kernelHeight = kernel.GetLength(0);
+            if (kernel2 != null)
+            {
+                // on a 2 kernels
+                for (int y = 0; y < height; y++)
+                {
+                    for (int x = 0; x < width; x++)
+                    {
+                        int[] pos = new int[2] {y, x};
+                        int[,,] theNeighbors = Getneighbors(pos, kernelWidth, kernelHeight);
+                        double magnitudeX = 0;
+                        double magnitudeY = 0;
+                        for (int i = 0; i < kernelHeight; i++)
+                        {
+                            for (int j = 0; j < kernelWidth; j++)
+                            {
+                                Bgr pix = data[theNeighbors[i, j, 0], theNeighbors[i, j, 1]];
+                                magnitudeX += pix.B * kernel[i, j];
+                                magnitudeY += pix.B * kernel2[i, j];
+                            }
+                        }
+                        int color = (int)(Math.Sqrt(magnitudeX * magnitudeX + magnitudeY * magnitudeY));
+                        output[y, x] = new Bgr(color, color, color);
+                    }
+                }
+            }
+            else
+            {
+                // on a 1 kernel
+                for (int y = 0; y < height; y++)
+                {
+                    for (int x = 0; x < width; x++)
+                    {
+                        double blue = 0;
+                        double green = 0;
+                        double red = 0;
+                        int[] pos = new int[2] { y, x };
+                        double n = 0;
+                        int[,,] theNeighbors = Getneighbors(pos, kernelWidth, kernelHeight);
+                        for (int i = 0; i < kernelHeight; i++)
+                        {
+                            for (int j = 0; j < kernelWidth; j++)
+                            {
+                                Bgr pix = data[theNeighbors[i, j, 0], theNeighbors[i, j, 1]];
+                                double b = (double) pix.B;
+                                double g = (double)pix.G;
+                                double r = (double)pix.R;
+                                n += kernel[i, j];
+                                blue += b * kernel[i, j];
+                                green += g * kernel[i, j];
+                                red += r * kernel[i, j];
+                            }
+                        }
+
+                        if (green > 255)
+                        {
+                            green = 255;
+                        }
+
+                        if (blue > 255)
+                        {
+                            blue = 255;
+                        }
+
+                        if (red > 255)
+                        {
+                            red = 255;
+                        }
+                        output[y, x] = new Bgr((int)Math.Round(blue), (int)Math.Round(green), (int)Math.Round(red));
+                        
+                    }
+                }
+            }
+
+            return new MyImage(output, width, height);
+        }
+
+        public int[, ,] Getneighbors(int[] pos, int kernelWidth, int kernelHeight)
+        {
+            int[, ,] neighbors = new int[kernelHeight,kernelWidth,2];
+            int x = pos[1];
+            int y = pos[0];
+            for (int i = -kernelHeight/2; i < kernelHeight / 2 + 1; i++)
+            for (int j = -kernelWidth / 2; j < kernelWidth / 2 + 1; j++)
+            {
+
+                int rx = x + i;
+                int ry = y + j;
+
+                if (rx >= 0 && ry >= 0 && rx < width && ry < height)
+                {
+                    neighbors[i + kernelHeight / 2, j + kernelWidth / 2, 0] = ry;
+                    neighbors[i + kernelHeight / 2, j + kernelWidth / 2, 1] = rx;
+                }
+                else
+                {
+                    neighbors[i + kernelHeight / 2, j + kernelWidth / 2, 0] = y;
+                    neighbors[i + kernelHeight / 2, j + kernelWidth / 2, 1] = x;
+                }
+
+
+            }
+
+            return neighbors;
+        }
+
+        public double[,] MatriceKernel(int type)
+        {
+            double[,] Kernel = new double[3, 3];
+
+
+            if(type==2)//Flou
+            {
+                Kernel = new double[3, 3];
+                Kernel[0,  0]  =  1.0  /  16.0;
+                Kernel[0, 2] = Kernel[0, 0];
+                Kernel[2, 0] = Kernel[0, 0];
+                Kernel[2, 2] = Kernel[0, 0];
+                Kernel[0,  1]  =  2.0/16.0;
+                Kernel[1, 0] = Kernel[0, 1];
+                Kernel[1, 2] = Kernel[0, 1];
+                Kernel[2,1 ] = Kernel[0, 1];
+                Kernel[1,  1]  =  4.0  /  16.0;
+            }
+            
+            else if(type==3)// Sharp
+            {
+                Kernel  =  new double[3,  3];
+                Kernel[0, 0] = 0;
+                Kernel[0, 2] = Kernel[0, 0];
+                Kernel[2, 0] = Kernel[0, 0];
+                Kernel[2, 2] = Kernel[0, 0];
+                Kernel[0, 1] = -1;
+                Kernel[1, 0] = Kernel[0, 1];
+                Kernel[1, 2] = Kernel[0, 1];
+                Kernel[2, 1] = Kernel[0, 1];
+                Kernel[1, 1] = 5;
+            }
+
+            else if(type==4)//Repoussage
+            {
+                
+                Kernel = new double[5, 5] { {-1.0/256.0 ,-4.0/256.0 ,-6.0/256.0, -14.0/256.0, -1.0/256.0},{ -4.0 / 256.0,-16.0 / 256.0,-24.0 / 256.0,-16.0 / 256.0,-4.0 / 256.0}  ,  { -6.0 / 256.0,-24.0 / 256.0,476.0 / 256.0,-24.0 / 256.0,-6.0 / 256.0}  ,  { -4.0 / 256.0,-16.0 / 256.0,-24.0 / 256.0,-16.0 / 256.0, -4.0 / 256.0}, { -1.0 / 256.0,-4.0 / 256.0,-6.0 / 256.0,-4.0 / 256.0,-1.0 / 256.0} } ;
+
+
+                
+                /*Kernel[0, 0] = -1.0/ 256.0;
+                Kernel[0,  4]  =  Kernel[0,  0];
+                Kernel[4, 0] = Kernel[0, 0];
+                Kernel[4, 4] = Kernel[0, 0];
+
+                Kernel[0,  1]  =  -4.0  /  256.0;
+                Kernel[0,  3]=  Kernel[0,  1];
+                Kernel[1, 0] = Kernel[0, 1];
+                Kernel[1, 4] = Kernel[0, 1];
+                Kernel[3, 0] = Kernel[0, 1];
+                Kernel[4, 1] = Kernel[0, 1];
+                Kernel[4, 3] = Kernel[0, 1];
+                Kernel[3, 4] = Kernel[0, 1];
+
+                Kernel[0,  2]  =  -6.0  /  256.0;
+                Kernel[2,  0]  =  Kernel[0,  2];
+                Kernel[2, 4] = Kernel[0, 2];
+                Kernel[4, 2] = Kernel[0, 2];
+
+                Kernel[1, 1] = -16.0 / 256.0;
+                Kernel[1, 3] = Kernel[1, 1];
+                Kernel[3, 1] = Kernel[1, 1];
+                Kernel[3, 3] = Kernel[1, 1];
+
+                Kernel[1, 2] = -24.0 / 256.0;
+                Kernel[2, 1] = Kernel[1, 2];
+                Kernel[2, 3] = Kernel[1, 2];
+                Kernel[3, 2] = Kernel[1, 2];
+
+                Kernel[2,  2]  =  -476.0  / 256.0;*/
+
+            }
+            return Kernel;
+        }
+
 
         #endregion
     }

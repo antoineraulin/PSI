@@ -63,6 +63,8 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="BGR.cs" />
+    <Compile Include="MyImage.cs" />
     <Compile Include="LibraryImage.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
@@ -138,6 +140,12 @@
     <Resource Include="image_library\sharp.bmp" />
     <Resource Include="image_library\Test.bmp" />
     <Resource Include="image_library\w3c_home.bmp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="image_library\bellpeper.bmp" />
+    <Resource Include="image_library\lenna.bmp" />
+    <Resource Include="image_library\rickroll.bmp" />
+    <Resource Include="image_library\animal.bmp" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

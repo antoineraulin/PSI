@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -23,23 +25,41 @@ namespace PSI
     /// </summary>
     public partial class MainWindow : Window
     {
+
+        private MyImage currentImage;
+        private List<LibraryImage> images;
         public MainWindow()
         {
             InitializeComponent();
-            List<LibraryImage> images = new List<LibraryImage>();
+             images = new List<LibraryImage>();
             //string projectDirectory = Directory.GetParent(workingDirectory).Parent.Parent.FullName;
             foreach (String filePath in Directory.GetFiles("../../image_library/", "*.bmp"))
             {
-                images.Add(new LibraryImage(filePath));
-
+                LibraryImage img = new LibraryImage(filePath);
+                images.Add(img);
+                MenuItem item = new MenuItem();
+                item.Header = img.Name;
+                item.Click += new RoutedEventHandler(MenuImageLibraryOnClick);
+                menuStock.Items.Add(item);
             }
             imageLibraryList.ItemsSource = images;
+
+        }
+
+        private void MenuImageLibraryOnClick(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuItem item)
+            {
+                int index = menuStock.Items.IndexOf(item);
+                LibraryImage img = images[index];
+                String path = Path.Combine(Directory.GetCurrentDirectory(), img.ImageUri);
+                LoadImage(path);
+            }
         }
 
         private void ImagesLibraryOnClick(object sender, MouseButtonEventArgs e)
         {
-            var item = sender as ListViewItem;
-            if (item != null)
+            if (sender is ListViewItem item)
             {
                 LibraryImage img = (LibraryImage) item.Content;
                 String path = Path.Combine(Directory.GetCurrentDirectory(), img.ImageUri);
@@ -83,6 +103,10 @@ namespace PSI
             MainMenu.Visibility = Visibility.Collapsed;
             ImageEditor.Visibility = Visibility.Visible;
             Uri fileUri = new Uri(filePath);
+            currentImage = new MyImage(filePath);
+            histogram.Source = null;
+            Thread thread = new Thread(generateHistogram);
+            thread.Start();
             MainMenu.Visibility = Visibility.Collapsed;
             ImageEditor.Visibility = Visibility.Visible;
             BitmapImage preview = new BitmapImage();
@@ -114,5 +138,116 @@ namespace PSI
             }
                 
         }
+
+        private void generateHistogram()
+        {
+            MyImage histo = currentImage.Histogramme();
+            histo.From_Image_To_File(@".\histo.bmp");
+            this.Dispatcher.BeginInvoke(new Action(() =>
+            {
+                Uri fileUri = new Uri(Path.Combine(Directory.GetCurrentDirectory(),@".\histo.bmp"));
+                MainMenu.Visibility = Visibility.Collapsed;
+                ImageEditor.Visibility = Visibility.Visible;
+                BitmapImage preview = new BitmapImage();
+                preview.BeginInit();
+                preview.CacheOption = BitmapCacheOption.OnLoad;
+                preview.CreateOptions = BitmapCreateOptions.IgnoreImageCache;
+                preview.UriSource = fileUri;
+                preview.EndInit();
+                histogram.Source = preview;
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+
+            }));
+        }
+
+        private void Miroir_OnClick(object sender, RoutedEventArgs e)
+        {
+            MyImage mirror = currentImage.EffetMiroir();
+            mirror.From_Image_To_File(@".\tmp.bmp");
+            currentImage = mirror;
+            Uri fileUri = new Uri(Path.Combine(Directory.GetCurrentDirectory(), @".\tmp.bmp"));
+            BitmapImage preview = new BitmapImage();
+            preview.BeginInit();
+            preview.CacheOption = BitmapCacheOption.OnLoad;
+            preview.CreateOptions = BitmapCreateOptions.IgnoreImageCache;
+            preview.UriSource = fileUri;
+            preview.EndInit();
+            ImagePreview.Source = preview;
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+        }
+
+        private void Rotate_OnClick(object sender, RoutedEventArgs e)
+        {
+            RotationDialog inputDialog = new RotationDialog();
+            if (inputDialog.ShowDialog() == true)
+            {
+                double angle;
+                if (double.TryParse(inputDialog.Answer, out angle))
+                {
+                    MyImage rotate = currentImage.RotationV2(angle, radian:inputDialog.isRadian);
+                    rotate.From_Image_To_File(@".\tmp.bmp");
+                    currentImage = rotate;
+                    histogram.Source = null;
+                    Thread thread = new Thread(generateHistogram);
+                    thread.Start();
+                    Uri fileUri = new Uri(Path.Combine(Directory.GetCurrentDirectory(), @".\tmp.bmp"));
+                    BitmapImage preview = new BitmapImage();
+                    preview.BeginInit();
+                    preview.CacheOption = BitmapCacheOption.OnLoad;
+                    preview.CreateOptions = BitmapCreateOptions.IgnoreImageCache;
+                    preview.UriSource = fileUri;
+                    preview.EndInit();
+                    ImagePreview.Source = preview;
+                    GC.Collect();
+                    GC.WaitForPendingFinalizers();
+                }
+                
+                
+            }
+                
+        }
+
+        private void BW_OnClick(object sender, RoutedEventArgs e)
+        {
+            MyImage bw = currentImage.ToBW();
+            bw.From_Image_To_File(@".\tmp.bmp");
+            currentImage = bw;
+            histogram.Source = null;
+            Thread thread = new Thread(generateHistogram);
+            thread.Start();
+            Uri fileUri = new Uri(Path.Combine(Directory.GetCurrentDirectory(), @".\tmp.bmp"));
+            BitmapImage preview = new BitmapImage();
+            preview.BeginInit();
+            preview.CacheOption = BitmapCacheOption.OnLoad;
+            preview.CreateOptions = BitmapCreateOptions.IgnoreImageCache;
+            preview.UriSource = fileUri;
+            preview.EndInit();
+            ImagePreview.Source = preview;
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+        }
+
+        private void Grayscale_OnClick(object sender, RoutedEventArgs e)
+        {
+            MyImage grayscale = currentImage.ToGrayscale();
+            grayscale.From_Image_To_File(@".\tmp.bmp");
+            currentImage = grayscale;
+            histogram.Source = null;
+            Thread thread = new Thread(generateHistogram);
+            thread.Start();
+            Uri fileUri = new Uri(Path.Combine(Directory.GetCurrentDirectory(), @".\tmp.bmp"));
+            BitmapImage preview = new BitmapImage();
+            preview.BeginInit();
+            preview.CacheOption = BitmapCacheOption.OnLoad;
+            preview.CreateOptions = BitmapCreateOptions.IgnoreImageCache;
+            preview.UriSource = fileUri;
+            preview.EndInit();
+            ImagePreview.Source = preview;
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+        }
+
     }
 }

@@ -20,13 +20,12 @@
                         <Image Source="assets/open_image.png" Width="18" Height="18" />
                     </MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="_Image de la banque d'images..." >
+                
+                <MenuItem Header="_Image de la banque d'images..." Name="menuStock">
                     <MenuItem.Icon>
                         <Image Source="assets/image_folder.png" Width="18" Height="18" />
                     </MenuItem.Icon>
-                    <MenuItem Header="Test.bmp"/>
-                    <MenuItem Header="fox.bmp"/>
-                    <MenuItem Header="w3c_home.bmp"/>
+                    
                 </MenuItem>
                 <MenuItem Header="_Sauvegarder">
                     <MenuItem.Icon>
@@ -119,10 +118,10 @@
                         <RowDefinition Height="100" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-                    <Image HorizontalAlignment="Stretch"  VerticalAlignment="Stretch" Source="assets/fake_histo.jpg" Stretch="Fill"/>
+                    <Image Name="histogram" HorizontalAlignment="Stretch"  VerticalAlignment="Stretch" Stretch="Fill"/>
                     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
                         <StackPanel>
-                            <Grid Height="30" Cursor="Hand">
+                            <Grid Height="30" Cursor="Hand" UIElement.PreviewMouseDown="Miroir_OnClick">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="30" />
                                     <ColumnDefinition Width="*" />
@@ -130,7 +129,7 @@
                                 <Image Source="assets/flip_vertical.png" Height="22" />
                                 <Label Grid.Column="1" Content="Miroir vertical" HorizontalAlignment="Left" VerticalAlignment="Center"  />
                             </Grid>
-                            <Grid Height="30" Cursor="Hand">
+                            <Grid Height="30" Cursor="Hand" UIElement.PreviewMouseDown="Rotate_OnClick">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="30" />
                                     <ColumnDefinition Width="*" />
@@ -138,7 +137,7 @@
                                 <Image Source="assets/rotate.png" Height="22" />
                                 <Label Grid.Column="1" Content="Rotation" HorizontalAlignment="Left" VerticalAlignment="Center"  />
                             </Grid>
-                            <Grid Height="30" Cursor="Hand">
+                            <Grid Height="30" Cursor="Hand" UIElement.PreviewMouseDown="Grayscale_OnClick">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="30" />
                                     <ColumnDefinition Width="*" />
@@ -146,7 +145,7 @@
                                 <Image Source="assets/grayscale.png" Height="22" />
                                 <Label Grid.Column="1" Content="Nuance de gris" HorizontalAlignment="Left" VerticalAlignment="Center"  />
                             </Grid>
-                            <Grid Height="30" Cursor="Hand">
+                            <Grid Height="30" Cursor="Hand" UIElement.PreviewMouseDown="BW_OnClick">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="30" />
                                     <ColumnDefinition Width="*" />

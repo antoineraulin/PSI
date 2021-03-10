@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Diagnostics;
+using System.IO;
+using System.Runtime.InteropServices;
 
 namespace PSI
 {
@@ -18,8 +20,12 @@ namespace PSI
 
         #region PRIVATE
 
+        public int height { get; }
+
+        public int width { get; }
+
         // définition des variables privées de l'objet
-        private int size, offset, height, width, depth, realImageSize;
+        private int size, offset, depth, realImageSize;
 
         /// <summary>
         /// matrice de pixels représentant l'image
@@ -67,10 +73,6 @@ namespace PSI
 
             return val;
         }
-
-        public int Height => height;
-
-        public int Width => width;
 
         /// <summary>
         /// Conversion d'un entier décimal en un tableau de bytes en ordre endian
@@ -246,10 +248,10 @@ namespace PSI
             }
 
             // hauteur de l'image
-            byte[] bHeight = Convertir_Int_To_Endian(height, 4);
+            byte[] bheight = Convertir_Int_To_Endian(height, 4);
             for (int index = 0; index < 4; index++)
             {
-                file[22 + index] = bHeight[index];
+                file[22 + index] = bheight[index];
             }
 
             //profondeur de l image
@@ -377,32 +379,32 @@ namespace PSI
 
 
 
-        public MyImage Resize(int newWidth, int newHeight)
+        public MyImage Resize(int newWidth, int newheight)
         {
-            Bgr[,] output = new Bgr[newHeight, newWidth];
-            for (int y = 0; y < newHeight; y++)
+            Bgr[,] output = new Bgr[newheight, newWidth];
+            for (int y = 0; y < newheight; y++)
             {
                 for (int x = 0; x < newWidth; x++)
                 {
                     // on fait une bête règle de trois pour savoir à quel pixel de l'image originale notre pixel correspond.
-                    int yInOriginal = (y * height) / newHeight; // le fait de calculer seulement avec des int permet d'arrondir strictement à l'inférieur, et donc on ne sors pas de l'image originale.
+                    int yInOriginal = (y * height) / newheight; // le fait de calculer seulement avec des int permet d'arrondir strictement à l'inférieur, et donc on ne sors pas de l'image originale.
                     int xInOriginal = (x * width) / newWidth;
                     output[y, x] = data[yInOriginal, xInOriginal];
                 }
             }
 
-            return new MyImage(output, newWidth, newHeight);
+            return new MyImage(output, newWidth, newheight);
         }
 
-        public MyImage ResizeAntialiasing(int newWidth, int newHeight)
+        public MyImage ResizeAntialiasing(int newWidth, int newheight)
         {
-            Bgr[,] output = new Bgr[newHeight, newWidth];
-            for (int y = 0; y < newHeight; y++)
+            Bgr[,] output = new Bgr[newheight, newWidth];
+            for (int y = 0; y < newheight; y++)
             {
                 for (int x = 0; x < newWidth; x++)
                 {
 
-                    double yInOriginal = (((double)y * (double)height) / (double)newHeight);
+                    double yInOriginal = (((double)y * (double)height) / (double)newheight);
                     double xInOriginal = (((double)x * (double)width) / (double)newWidth);
                     int strInfY = (int)yInOriginal;
                     int strInfX = (int)xInOriginal;
@@ -431,7 +433,7 @@ namespace PSI
                 }
             }
 
-            return new MyImage(output, newWidth, newHeight);
+            return new MyImage(output, newWidth, newheight);
         }
 
         public MyImage EffetMiroir()
@@ -496,15 +498,15 @@ namespace PSI
                 if (corner[0] < minY) minY = corner[0];
                 if (corner[1] < minX) minX = corner[1];
             }
-            int newHeight = (int)(maxY - minY) + 1;
+            int newheight = (int)(maxY - minY) + 1;
             int newWidth = (int)(maxX - minX) + 1;
-            Console.WriteLine($"newHeight : {newHeight} | newWidth : {newWidth}");
+            Console.WriteLine($"newheight : {newheight} | newWidth : {newWidth}");
 
             // définissons le centre de rotation au centre de l'image d'arrivée
-            double y0prime = newHeight / 2.0;
+            double y0prime = newheight / 2.0;
             double x0prime = newWidth / 2.0;
 
-            Bgr[,] output = new Bgr[newHeight, newWidth];
+            Bgr[,] output = new Bgr[newheight, newWidth];
             for (double y1 = 0.0; y1 < output.GetLength(0); y1 += 1)
             {
                 for (double x1 = 0.0; x1 < output.GetLength(1); x1 += 1)
@@ -524,7 +526,7 @@ namespace PSI
                 }
             }
 
-            return new MyImage(output, newWidth, newHeight);
+            return new MyImage(output, newWidth, newheight);
         }
 
         public static void AfficherImage(Bgr[,] tab)
@@ -565,7 +567,7 @@ namespace PSI
         {
             Bgr[,] output = new Bgr[height, width];
             int kernelWidth = kernel.GetLength(1);
-            int kernelHeight = kernel.GetLength(0);
+            int kernelheight = kernel.GetLength(0);
             if (kernel2 != null)
             {
                 // on a 2 kernels
@@ -574,10 +576,10 @@ namespace PSI
                     for (int x = 0; x < width; x++)
                     {
                         int[] pos = new int[2] { y, x };
-                        int[,,] theNeighbors = Getneighbors(pos, kernelWidth, kernelHeight);
+                        int[,,] theNeighbors = Getneighbors(pos, kernelWidth, kernelheight);
                         double magnitudeX = 0;
                         double magnitudeY = 0;
-                        for (int i = 0; i < kernelHeight; i++)
+                        for (int i = 0; i < kernelheight; i++)
                         {
                             for (int j = 0; j < kernelWidth; j++)
                             {
@@ -603,8 +605,8 @@ namespace PSI
                         double red = 0;
                         int[] pos = new int[2] { y, x };
                         double n = 0;
-                        int[,,] theNeighbors = Getneighbors(pos, kernelWidth, kernelHeight);
-                        for (int i = 0; i < kernelHeight; i++)
+                        int[,,] theNeighbors = Getneighbors(pos, kernelWidth, kernelheight);
+                        for (int i = 0; i < kernelheight; i++)
                         {
                             for (int j = 0; j < kernelWidth; j++)
                             {
@@ -642,12 +644,12 @@ namespace PSI
             return new MyImage(output, width, height);
         }
 
-        public int[,,] Getneighbors(int[] pos, int kernelWidth, int kernelHeight)
+        public int[,,] Getneighbors(int[] pos, int kernelWidth, int kernelheight)
         {
-            int[,,] neighbors = new int[kernelHeight, kernelWidth, 2];
+            int[,,] neighbors = new int[kernelheight, kernelWidth, 2];
             int x = pos[1];
             int y = pos[0];
-            for (int i = -kernelHeight / 2; i < kernelHeight / 2 + 1; i++)
+            for (int i = -kernelheight / 2; i < kernelheight / 2 + 1; i++)
                 for (int j = -kernelWidth / 2; j < kernelWidth / 2 + 1; j++)
                 {
 
@@ -656,13 +658,13 @@ namespace PSI
 
                     if (rx >= 0 && ry >= 0 && rx < width && ry < height)
                     {
-                        neighbors[i + kernelHeight / 2, j + kernelWidth / 2, 0] = ry;
-                        neighbors[i + kernelHeight / 2, j + kernelWidth / 2, 1] = rx;
+                        neighbors[i + kernelheight / 2, j + kernelWidth / 2, 0] = ry;
+                        neighbors[i + kernelheight / 2, j + kernelWidth / 2, 1] = rx;
                     }
                     else
                     {
-                        neighbors[i + kernelHeight / 2, j + kernelWidth / 2, 0] = y;
-                        neighbors[i + kernelHeight / 2, j + kernelWidth / 2, 1] = x;
+                        neighbors[i + kernelheight / 2, j + kernelWidth / 2, 0] = y;
+                        neighbors[i + kernelheight / 2, j + kernelWidth / 2, 1] = x;
                     }
 
 
@@ -746,6 +748,139 @@ namespace PSI
             return Kernel;
         }
 
+        public static MyImage MandelBrot(int iteration_max, int image_x, int image_y)
+        {
+            //on définit la taille de la fractale
+            double x1 = -2.1;
+            double x2 = 0.6;
+            double y1 = -1.2;
+            double y2 = 1.2;
+
+            Bgr[,] output = new Bgr[image_y, image_x];
+
+            //on calcule la taille de l'image
+            double zoom_x = image_x / (x2 - x1);
+            double zoom_y = image_y / (y2 - y1);
+
+            for (double x = 0; x < image_x; x++)
+            {
+                for (double y = 0; y < image_y; y++)
+                {
+                    double c_r = x / zoom_x + x1;
+                    double c_i = y / zoom_y + y1;
+                    double z_r = 0;
+                    double z_i = 0;
+                    int i = 0;
+
+                    do
+                    {
+                        double tmp = z_r;
+                        z_r = z_r * z_r - z_i * z_i + c_r;
+                        z_i = 2 * z_i * tmp + c_i;
+                        i++;
+                    } while (z_r * z_r + z_i * z_i < 4 && i < iteration_max);
+
+                    if (i == iteration_max)
+                    {
+                        output[(int)y, (int)x] = new Bgr(0, 0, 0);
+                    }
+                    else
+                    {
+                        output[(int)y, (int)x] = new Bgr(255, 255, 255);
+                    }
+                }
+            }
+
+            return new MyImage(output, image_x, image_y);
+        }
+
+        public static MyImage Julia(int iteration_max, int image_x, int image_y, bool color = false)
+        {
+            double x1 = -1;
+            double x2 = 1;
+            double y1 = -1.2;
+            double y2 = 1.2;
+
+
+            //on calcule la taille de l'image
+            double zoom_x = image_x / (x2 - x1);
+            double zoom_y = image_y / (y2 - y1);
+
+            Bgr[,] output = new Bgr[image_y, image_x];
+
+            for (int x = 0; x < image_x; x++)
+            {
+                for (int y = 0; y < image_y; y++)
+                {
+                    double c_r = 0.285;
+                    double c_i = 0.01;
+                    double z_r = x / zoom_x + x1;
+                    double z_i = y / zoom_y + y1;
+                    double i = 0;
+
+                    do
+                    {
+                        double tmp = z_r;
+                        z_r = z_r * z_r - z_i * z_i + c_r;
+                        z_i = 2 * z_i * tmp + c_i;
+                        i++;
+
+                    } while (z_r * z_r + z_i * z_i < 4 && i < iteration_max);
+
+
+                    if (i == iteration_max)
+                    {
+                        output[(int)y, (int)x] = new Bgr(0, 0, 0);
+                    }
+                    else
+                    {
+                        output[(int)y, (int)x] = new Bgr(0, 0, (int)(i * 255.0 / iteration_max));
+                    }
+                }
+
+
+            }
+
+            return new MyImage(output, image_x, image_y);
+
+        }
+
+        public MyImage Histogramme()
+        {
+            
+            int[] blueRepartition = new int[256];
+            int[] greenRepartition = new int[256];
+            int[] redRepartition = new int[256];
+
+            for (int x=0;x<width;x++)
+            {
+                for(int y=0;y<height;y++)
+                {
+                    blueRepartition[data[y, x].B]++;
+                    greenRepartition[data[y, x].G]++;
+                    redRepartition[data[y,  x].R]++;
+                }
+            }
+
+            int[] maxs = {blueRepartition.Max(), redRepartition.Max(), greenRepartition.Max()};
+            int max = maxs.Max();
+            Bgr[,] output = new Bgr[max, 255];
+            for (int y = 0; y < max; y++)
+            {
+                for (int x = 0; x < 255; x++)
+                {
+                    output[y, x] = new Bgr(blueRepartition[x]>=y?255:0, greenRepartition[x] >= y ? 255 : 0, redRepartition[x] >= y ? 255 : 0);
+                }
+            }
+            MyImage res = new MyImage(output, 255, max);
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            return res;
+        }
+
+
+
+        
 
         #endregion
     }

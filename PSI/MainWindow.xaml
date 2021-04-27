@@ -1,18 +1,43 @@
-﻿<Window x:Class="PSI.MainWindow"
+﻿
+    <Window x:Class="PSI.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:PSI"
         mc:Ignorable="d"
+        AllowsTransparency="True"
+        ResizeMode="CanResizeWithGrip"
+        Background="Transparent"
+        WindowStyle="None"
         Title="PSI" Height="450" Width="800" MinHeight="450" MinWidth="800">
     <Window.CommandBindings>
         <CommandBinding Command="Open" Executed="OpenFile_Click" />
-    </Window.CommandBindings>
+        <CommandBinding Command="Undo" Executed="Undo_OnClick" />
+        <CommandBinding Command="{x:Static SystemCommands.CloseWindowCommand}" CanExecute="CommandBinding_CanExecute_1" Executed="CommandBinding_Executed_1" />
+        <CommandBinding Command="{x:Static SystemCommands.MaximizeWindowCommand}" CanExecute="CommandBinding_CanExecute_1" Executed="CommandBinding_Executed_2" />
+        <CommandBinding Command="{x:Static SystemCommands.MinimizeWindowCommand}" CanExecute="CommandBinding_CanExecute_1" Executed="CommandBinding_Executed_3" />
+
+</Window.CommandBindings>
     <Window.InputBindings>
         <KeyBinding Key="O" Modifiers="Control" Command="Open"/>
     </Window.InputBindings>
-    <DockPanel>
+
+    <DockPanel Background="White">
+        
+        <Grid DockPanel.Dock="Top" Name="titlebar" HorizontalAlignment="Stretch" Height="36" VerticalAlignment="Stretch" Background="White">
+            <Label Content="PSI" FontSize="14"  Padding="8,0,0,0" Foreground="Black" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+
+            <Button Command="{x:Static SystemCommands.CloseWindowCommand}" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" Height="36" Width="42" HorizontalAlignment="Right" Margin="0"  >
+                    <Image Source="assets/close_window.png" Height="20"></Image>
+            </Button>
+            <Button Command="{x:Static SystemCommands.MinimizeWindowCommand}" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" Height="36" Width="42" HorizontalAlignment="Right" Margin="0,0,42,0"  >
+                <Image Source="assets/minimize.png" Height="20"></Image>
+            </Button>
+            <Button IsEnabled="False" Click="Undo_OnClick" Name="undo" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" Height="36" Width="42" HorizontalAlignment="Right" Margin="0,0,84,0"  >
+                <Image Name="undoImage" Source="assets/undo0.png"  Height="18"></Image>
+            </Button>
+        </Grid>
         <Menu DockPanel.Dock="Top" Background="WhiteSmoke">
             <MenuItem Header="_Fichier">
                 <MenuItem Header="_Ouvrir une image" Click="OpenFile_Click" InputGestureText="Ctrl+O">
@@ -20,7 +45,11 @@
                         <Image Source="assets/open_image.png" Width="18" Height="18" />
                     </MenuItem.Icon>
                 </MenuItem>
-                
+                <MenuItem Header="Générer une fractale" Click="Fractal_OnClick">
+                    <MenuItem.Icon>
+                        <Image Source="assets/fractal.png" Width="18" Height="18" />
+                    </MenuItem.Icon>
+                </MenuItem>
                 <MenuItem Header="_Image de la banque d'images..." Name="menuStock">
                     <MenuItem.Icon>
                         <Image Source="assets/image_folder.png" Width="18" Height="18" />
@@ -38,6 +67,11 @@
                         <Image Source="assets/close.png" Width="18" Height="18" />
                     </MenuItem.Icon>
                 </MenuItem>
+            </MenuItem>
+            <MenuItem Header="_Edition">
+                <MenuItem Header="Annuler" Click="Undo_OnClick" InputGestureText="Ctrl+Z">
+                </MenuItem>
+
             </MenuItem>
         </Menu>
         <Grid>
@@ -104,7 +138,7 @@
                     <RowDefinition Height="*" />
                     <RowDefinition Height="20"/>
                 </Grid.RowDefinitions>
-                <Grid Grid.ColumnSpan="2" HorizontalAlignment="Stretch"  Grid.Row="1" VerticalAlignment="Stretch" Background="DodgerBlue">
+                <Grid Grid.ColumnSpan="2" HorizontalAlignment="Stretch" Name="BottomBar" Grid.Row="1" VerticalAlignment="Stretch" Background="DodgerBlue">
                     <Label Name="BottomBarLeftLabel" Content="Prêt - Test.bmp" FontSize="13" Height="20" Padding="8,0,0,0" Foreground="White"/>
                 </Grid>
                 <Border Background="White">
@@ -153,13 +187,53 @@
                                 <Image Source="bw.png" Height="24" />
                                 <Label Grid.Column="1" Content="Noir et Blanc" HorizontalAlignment="Left" VerticalAlignment="Center"  />
                             </Grid>
-                            <Grid Height="30" Cursor="Hand">
+                            <Grid Height="30" Cursor="Hand" UIElement.PreviewMouseDown="Scale_OnClick">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="30" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
                                 <Image Source="assets/resize.png" Height="24" />
                                 <Label Grid.Column="1" Content="Redimensionner" HorizontalAlignment="Left" VerticalAlignment="Center"  />
+                            </Grid>
+                            <Grid Height="30" Cursor="Hand" UIElement.PreviewMouseDown="Blur_OnClick">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="30" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Image Source="assets/blur.png" Height="24" />
+                                <Label Grid.Column="1" Content="Flou Gaussien" HorizontalAlignment="Left" VerticalAlignment="Center"  />
+                            </Grid>
+                            <Grid Height="30" Cursor="Hand" UIElement.PreviewMouseDown="Edge_OnClick">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="30" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Image Source="assets/edge.png" Height="24" />
+                                <Label Grid.Column="1" Content="Détection de contour" HorizontalAlignment="Left" VerticalAlignment="Center"  />
+                            </Grid>
+                            <Grid Height="30" Cursor="Hand" UIElement.PreviewMouseDown="Sharp_OnClick">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="30" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Image Source="assets/sharp.png" Height="24" />
+                                <Label Grid.Column="1" Content="Renforcement des bords" HorizontalAlignment="Left" VerticalAlignment="Center"  />
+                            </Grid>
+                            <Grid Height="30" Cursor="Hand" UIElement.PreviewMouseDown="Stegano_Encode_OnClick">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="30" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Image Source="assets/stegano.png" Height="24" />
+                                <Label Grid.Column="1" Content="Stéganographie - Encode" HorizontalAlignment="Left" VerticalAlignment="Center"  />
+                            </Grid>
+                            <Grid Height="30" Cursor="Hand" UIElement.PreviewMouseDown="Stegano_Decode_OnClick">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="30" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Image Source="assets/stegano.png" Height="24" />
+                                <Label Grid.Column="1" Content="Stéganographie - Decode" HorizontalAlignment="Left" VerticalAlignment="Center"  />
                             </Grid>
                         </StackPanel>
                     </ScrollViewer>

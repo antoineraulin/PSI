@@ -23,7 +23,7 @@ namespace PSI
         {
             ImageUri = imageUri;
             MyImage image = new MyImage(imageUri);
-            Name = imageUri.Split('/').Last();
+            Name = imageUri.Split('\\').Last();
             Size = $"{image.height}x{image.width}";
         }
 

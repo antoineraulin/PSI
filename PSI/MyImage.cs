@@ -751,10 +751,10 @@ namespace PSI
         public static MyImage MandelBrot(int iteration_max, int image_x, int image_y)
         {
             //on définit la taille de la fractale
-            double x1 = -2.1;
-            double x2 = 0.6;
-            double y1 = -1.2;
-            double y2 = 1.2;
+            double x1 = 0.22;
+            double x2 = 0.32;
+            double y1 = 0.10;
+            double y2 = -0.10;
 
             Bgr[,] output = new Bgr[image_y, image_x];
 
@@ -786,7 +786,7 @@ namespace PSI
                     }
                     else
                     {
-                        output[(int)y, (int)x] = new Bgr(255, 255, 255);
+                        output[(int)y, (int)x] = new Bgr(0, 0, (int)(i * 255.0 / iteration_max));
                     }
                 }
             }
@@ -794,7 +794,7 @@ namespace PSI
             return new MyImage(output, image_x, image_y);
         }
 
-        public static MyImage Julia(int iteration_max, int image_x, int image_y, bool color = false)
+        public static MyImage Julia(int iteration_max, int image_x, int image_y)
         {
             double x1 = -1;
             double x2 = 1;
@@ -878,9 +878,40 @@ namespace PSI
             return res;
         }
 
+        public MyImage SteganographyEncode(MyImage imageToHide)
+        {
+            MyImage rescaled = Resize(imageToHide.width, imageToHide.height);
+            rescaled.From_Image_To_File(@".\stegano.bmp");
+            imageToHide.From_Image_To_File(@".\toHide.bmp");
+            byte[] hideFile = File.ReadAllBytes(@".\toHide.bmp");
+            byte[] originalFile = File.ReadAllBytes(@".\stegano.bmp");
+            byte[] hideImageBytes = hideFile.Skip(imageToHide.offset).Take(imageToHide.realImageSize).ToArray();
+            for (int i = offset; i < offset + realImageSize; i++)
+            {
+                int j = i - offset;
+                if (j < hideImageBytes.Length)
+                {
+                    byte newLow = (byte)(hideImageBytes[j] & 0xF0);
+                    originalFile[i] = (byte)(originalFile[i] & 0xF0 | (newLow >> 4));
+                }
+            }
+            File.WriteAllBytes(@".\stegano.bmp", originalFile);
+            return new MyImage(@".\stegano.bmp");
+        }
 
-
-        
+        public MyImage SteganographyDecode()
+        {
+            From_Image_To_File(@".\stegano.bmp");
+            byte[] originalFile = File.ReadAllBytes(@".\stegano.bmp");
+            byte[] finalFile = originalFile;
+            for (int i = offset; i < offset + realImageSize; i++)
+            {
+                byte low = (byte)(originalFile[i] & 0x0F);
+                originalFile[i] = (byte)(originalFile[i] & 0x0F |  (low << 4));
+            }
+            File.WriteAllBytes(@".\steganoRes.bmp", originalFile);
+            return new MyImage(@".\steganoRes.bmp");
+        }
 
         #endregion
     }

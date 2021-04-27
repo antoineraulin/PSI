@@ -55,8 +55,20 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="GenericGF.cs" />
+    <Compile Include="GenericGFPoly.cs" />
+    <Compile Include="FractalDialog.xaml.cs">
+      <DependentUpon>FractalDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="QR.cs" />
+    <Compile Include="ReedSolomonAlgorithm.cs" />
+    <Compile Include="ReedSolomonDecoder.cs" />
+    <Compile Include="ReedSolomonEncoder.cs" />
     <Compile Include="RotateDialog.xaml.cs">
       <DependentUpon>RotateDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="ScaleDialog.xaml.cs">
+      <DependentUpon>ScaleDialog.xaml</DependentUpon>
     </Compile>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
@@ -73,7 +85,15 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="FractalDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="RotateDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ScaleDialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -123,9 +143,6 @@
     <Resource Include="fox.bmp" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="assets\fake_histo.jpg" />
-  </ItemGroup>
-  <ItemGroup>
     <Resource Include="assets\flip_vertical.png" />
   </ItemGroup>
   <ItemGroup>
@@ -162,6 +179,32 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="image_library\damier.bmp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="assets\close_window.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="assets\minimize.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="assets\undo0.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="assets\undo1.png" />
+    <Resource Include="assets\undo2.png" />
+    <Resource Include="assets\undo3.png" />
+    <Resource Include="assets\undo4.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="assets\blur.png" />
+    <Resource Include="assets\edge.png" />
+    <Resource Include="assets\sharp.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="assets\fractal.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="assets\stegano.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -33,7 +33,7 @@ namespace PSI
         public MainWindow()
         {
             InitializeComponent();
-            images = new List<LibraryImage>();
+            /*images = new List<LibraryImage>();
             //string projectDirectory = Directory.GetParent(workingDirectory).Parent.Parent.FullName;
             foreach (String filePath in Directory.GetFiles("..\\..\\image_library\\", "*.bmp"))
             {
@@ -47,8 +47,10 @@ namespace PSI
             imageLibraryList.ItemsSource = images;
 
             this.titlebar.MouseLeftButtonDown +=
-                new MouseButtonEventHandler(title_MouseLeftButtonDown);
+                new MouseButtonEventHandler(title_MouseLeftButtonDown);*/
 
+            MyImage.GenerateQRCode("PROJET PSI ESILV");
+            Environment.Exit(0);
         }
 
         private void MenuImageLibraryOnClick(object sender, RoutedEventArgs e)

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Windows.Input;
 
 namespace PSI
 {
@@ -118,13 +119,13 @@ namespace PSI
                 throw new ArgumentException("Le fichier fournit n'est pas un Bitmap");
             }
 
-            Console.WriteLine("C'est un bitmap");
+            Console.WriteLine(@"C'est un bitmap");
 
             size = Convertir_Endian_To_Int(file, 4, 2);
 
             offset = Convertir_Endian_To_Int(file, 4, 10);
-            Console.WriteLine($"size : {size}");
-            Console.WriteLine($"offset : {offset}");
+            Console.WriteLine($@"size : {size}");
+            Console.WriteLine($@"offset : {offset}");
 
 
             width = Convertir_Endian_To_Int(file, 4, 18);
@@ -140,15 +141,15 @@ namespace PSI
                 throw new ArgumentException("la profondeur de l'image doit être de 24 bits ");
             }
 
-            Console.WriteLine($"width : {width}");
-            Console.WriteLine($"height : {height}");
-            Console.WriteLine($"depth : {depth}");
-            Console.WriteLine($"realImageSize : {realImageSize}");
+            Console.WriteLine($@"width : {width}");
+            Console.WriteLine($@"height : {height}");
+            Console.WriteLine($@"depth : {depth}");
+            Console.WriteLine($@"realImageSize : {realImageSize}");
 
 
             // L'image elle-même
 
-            Console.WriteLine("bytes image:");
+            Console.WriteLine(@"bytes image:");
 
 
 
@@ -500,7 +501,7 @@ namespace PSI
             }
             int newheight = (int)(maxY - minY) + 1;
             int newWidth = (int)(maxX - minX) + 1;
-            Console.WriteLine($"newheight : {newheight} | newWidth : {newWidth}");
+            Console.WriteLine($@"newheight : {newheight} | newWidth : {newWidth}");
 
             // définissons le centre de rotation au centre de l'image d'arrivée
             double y0prime = newheight / 2.0;
@@ -847,29 +848,29 @@ namespace PSI
 
         public MyImage Histogramme()
         {
-            
+
             int[] blueRepartition = new int[256];
             int[] greenRepartition = new int[256];
             int[] redRepartition = new int[256];
 
-            for (int x=0;x<width;x++)
+            for (int x = 0; x < width; x++)
             {
-                for(int y=0;y<height;y++)
+                for (int y = 0; y < height; y++)
                 {
                     blueRepartition[data[y, x].B]++;
                     greenRepartition[data[y, x].G]++;
-                    redRepartition[data[y,  x].R]++;
+                    redRepartition[data[y, x].R]++;
                 }
             }
 
-            int[] maxs = {blueRepartition.Max(), redRepartition.Max(), greenRepartition.Max()};
+            int[] maxs = { blueRepartition.Max(), redRepartition.Max(), greenRepartition.Max() };
             int max = maxs.Max();
             Bgr[,] output = new Bgr[max, 255];
             for (int y = 0; y < max; y++)
             {
                 for (int x = 0; x < 255; x++)
                 {
-                    output[y, x] = new Bgr(blueRepartition[x]>=y?255:0, greenRepartition[x] >= y ? 255 : 0, redRepartition[x] >= y ? 255 : 0);
+                    output[y, x] = new Bgr(blueRepartition[x] >= y ? 255 : 0, greenRepartition[x] >= y ? 255 : 0, redRepartition[x] >= y ? 255 : 0);
                 }
             }
             MyImage res = new MyImage(output, 255, max);
@@ -907,11 +908,438 @@ namespace PSI
             for (int i = offset; i < offset + realImageSize; i++)
             {
                 byte low = (byte)(originalFile[i] & 0x0F);
-                originalFile[i] = (byte)(originalFile[i] & 0x0F |  (low << 4));
+                originalFile[i] = (byte)(originalFile[i] & 0x0F | (low << 4));
             }
             File.WriteAllBytes(@".\steganoRes.bmp", originalFile);
             return new MyImage(@".\steganoRes.bmp");
         }
+
+        #region QRCODE
+
+        public static int FromCharToInt(char c)
+        {
+            int res;
+            if (Char.IsDigit(c))
+            {
+                res = Convert.ToInt32(new string(c, 1));
+            }
+            else if (Char.IsLetter(c))
+            {
+                res = c;
+                res -= 55; //car code Ascii
+            }
+            else
+            {
+                switch (c)
+                {
+                    case ' ':
+                        res = 36;
+                        break;
+                    case '$':
+                        res = 37;
+                        break;
+                    case '%':
+                        res = 38;
+                        break;
+                    case '*':
+                        res = 39;
+                        break;
+                    case '+':
+                        res = 40;
+                        break;
+                    case '-':
+                        res = 41;
+                        break;
+                    case '.':
+                        res = 42;
+                        break;
+                    case '/':
+                        res = 43;
+                        break;
+                    case ':':
+                        res = 44;
+                        break;
+                    default:
+                        throw new ArgumentException("Caractère non reconnu");
+                }
+            }
+            return res;
+
+        }
+
+        public static void GenerateQRCode(String input)
+        {
+            // Encodages préliminaires
+            int inputLength = input.Length;
+            int qrVersion = 1;
+            String typeInfo = "0010";
+            String binInputLenght = Convert.ToString(inputLength, 2).PadLeft(9, '0'); // version 1
+            if (inputLength > 24)
+            {
+                qrVersion = 2;
+                
+            }
+
+            
+
+            // Analyse et Encodage des données 
+            int[] inputInt = new int[input.Length];
+            int[] inputPair = new int[input.Length / 2 + 1];
+            for (int i = 0; i < input.Length; i++)
+            {
+                inputInt[i] = FromCharToInt(input[i]);
+                Console.WriteLine(inputInt[i]);
+            }
+
+            String bitString = typeInfo + binInputLenght;
+            Console.WriteLine("Create data segment :");
+            for (int i = 0; i < input.Length; i += 2)
+            {
+                if (i + 1 < input.Length)
+                {
+                    inputPair[i / 2] = 45 * inputInt[i] + inputInt[i + 1];
+                    bitString += Convert.ToString(inputPair[i / 2], 2).PadLeft(11, '0');
+                    Console.WriteLine(inputPair[i / 2]);
+                }
+                else
+                {
+                    inputPair[i / 2] = inputInt[i];
+                    bitString += Convert.ToString(inputPair[i / 2], 2).PadLeft(6, '0');
+                    Console.WriteLine(inputPair[i / 2]);
+
+                }
+            }
+
+            Console.WriteLine(bitString);
+
+            int bitStringLength = bitString.Length;
+
+            Console.WriteLine(bitStringLength);
+            int requiredSize = qrVersion == 1 ? 152 : 272;
+            int difference = requiredSize - bitStringLength;
+            if (difference >= 4)
+            {
+                bitString += "0000";
+            }
+            else
+            {
+                bitString += new String('0', difference);
+            }
+
+            Console.WriteLine(bitString);
+
+            int tailleModulo8 = bitString.Length % 8;
+            if(tailleModulo8 != 0) bitString += new String('0', 8 - tailleModulo8);
+            Console.WriteLine(bitString);
+
+            Console.WriteLine($@"bitString.Length : {bitString.Length}");
+
+            difference = requiredSize - bitString.Length;
+
+            Console.WriteLine($@"difference : {difference}");
+            int repeat = difference / 8;
+            Console.WriteLine($@"repeat : {repeat}");
+            bool kind = false;
+            while (repeat != 0)
+            {
+                if (!kind)
+                {
+                    bitString += "11101100";
+                }
+                else
+                {
+                    bitString += "00010001";
+                }
+
+                repeat--;
+
+                kind = !kind;
+            }
+
+            Console.WriteLine(bitString);
+
+
+            //Etape 2 : Correction reed-solomon
+            int numOfBytes = bitString.Length / 8;
+            byte[] bytes = new byte[numOfBytes];
+            for (int i = 0; i < numOfBytes; ++i)
+            {
+                bytes[i] = Convert.ToByte(bitString.Substring(8 * i, 8), 2);
+                Console.WriteLine($@"{i} : {bytes[i]}");
+            }
+
+            Console.WriteLine(@"reed solomon : ");
+
+            byte[] correction = ReedSolomonAlgorithm.Encode(bytes, qrVersion == 1?7:10, ErrorCorrectionCodeType.QRCode);
+            for (int i = 0; i < correction.Length; i++)
+            {
+                Console.WriteLine($@"{i+35} : {correction[i]}");
+                bitString += Convert.ToString(correction[i], 2).PadLeft(8, '0');
+            }
+            Console.WriteLine(bitString);
+
+            int matrixSize = qrVersion == 1 ? 21 : 25;
+
+            // init qr matrix
+            Bgr[,] qrmatrix = new Bgr[matrixSize, matrixSize];
+            // on rempli tout les pixels de rouge pour pouvoir voir plus facilement ceux qui n'ont pas encore été rempli
+
+            for (int i = 0; i < matrixSize; i++)
+            {
+                for (int j = 0; j < matrixSize; j++)
+                {
+                    qrmatrix[i, j] = new Bgr(0, 0, 255);
+                }
+            }
+            // Génération des timers
+            ApplyTimer(qrmatrix);
+
+            // On génère les 3 marqueurs 
+            // les offsets permettent de positionner correctement les 4 marqueurs
+            ApplyQrMarkers(qrmatrix, 0, 0);
+            ApplyQrMarkers(qrmatrix, 0, matrixSize-7);
+            ApplyQrMarkers(qrmatrix, matrixSize - 7, matrixSize - 7);
+
+            // module sombre obligatoire
+            qrmatrix[matrixSize-1-((4 * qrVersion) + 9), 8] = new Bgr(0, 0, 0);
+
+            ApplyEccAndVersionCode(qrmatrix, "111011111000100");
+            if (qrVersion == 2)
+            {
+                ApplyAlignementMarker(qrmatrix);
+            }
+            
+            WriteData(qrmatrix, bitString);
+            ApplyMask(qrmatrix);
+
+            MyImage qrFinal = new MyImage(qrmatrix, matrixSize, matrixSize);
+            qrFinal.From_Image_To_File("./qr.bmp");
+            Process.Start(@"C:\Users\antoi\AppData\Local\Programs\Microsoft VS Code\bin\code", @"C:\Users\antoi\Documents\PSI\PSI\bin\Debug\qr.bmp");
+
+
+        }
+
+        /// <summary>
+        /// Génère un marqueur de positionnement pour QR code
+        /// </summary>
+        /// <param name="matrix">matrice de pixel</param>
+        /// <param name="offsetx">décalage du marqueur en x</param>
+        /// <param name="offsety">décalage du marqueur en y</param>
+        private static void ApplyQrMarkers(Bgr[,] matrix, int offsetx, int offsety)
+        {
+            int matrixSize = matrix.GetLength(0);
+            // ici rien de très intéressant, juste des boucles et des if pour générer deux carrés imbriqués.
+            for (int y = -1 + offsety; y < 8 + offsety; y++)
+            {
+                for (int x = -1 + offsetx; x < 8 + offsetx; x++)
+                {
+                    if (x < 0 || y < 0 || x > matrixSize-1 || y > matrixSize - 1) continue;
+                    
+                    if (x > 6 + offsetx || y > 6 + offsety || x < 0 + offsetx || y < 0 + offsety)
+                    {
+                        matrix[y, x] = new Bgr(255, 255, 255);
+                    }
+                    else if ((x > 1 + offsetx && x < 5 + offsetx && y > 1 + offsety && y < 5 + offsety) || (y == 0 + offsety || y == 6 + offsety || x == 0 + offsetx || x == 6 + offsetx))
+                    {
+                        matrix[y, x] = new Bgr(0, 0, 0);
+                    }
+                    else
+                    {
+                        matrix[y, x] = new Bgr(255, 255, 255);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Génère les pixels de timer du QR code
+        /// </summary>
+        /// <param name="qrmatrix">matrice de pixel</param>
+        private static void ApplyTimer(Bgr[,] qrmatrix)
+        {
+            int matrixSize = qrmatrix.GetLength(0);
+            for (int i = 0; i < matrixSize; i++)
+            {
+                int color = i % 2 == 0 ? 0 : 255;
+                Bgr pixel = new Bgr(color, color, color);
+                qrmatrix[matrixSize-7, i] = pixel;
+                qrmatrix[i, 6] = pixel;
+            }
+        }
+
+        private static void ApplyEccAndVersionCode(Bgr[,] qrmatrix, String data)
+        {
+            int matrixSize = qrmatrix.GetLength(0);
+            int color;
+            Bgr pixel;
+            for (int i = 0; i < 7; i++)
+            {
+                color = data[i] == '0' ? 255 : 0;
+                pixel = new Bgr(color, color, color);
+                qrmatrix[i, 8] = pixel;
+                if (i < 6) qrmatrix[matrixSize - 9, i] = pixel;
+            }
+            for (int i = 14; i > 5; i--)
+            {
+                color = data[i] == '0' ? 255 : 0;
+                pixel = new Bgr(color, color, color);
+                if (i > 6) qrmatrix[matrixSize - 9, matrixSize - 15 + i] = pixel;
+                if (i > 8) qrmatrix[matrixSize - 15 + i, 8] = pixel;
+                else switch (i)
+                {
+                    case 8:
+                        qrmatrix[matrixSize - 8, 8] = pixel;
+                        break;
+                    case 7:
+                        qrmatrix[matrixSize - 9, 8] = pixel;
+                        break;
+                    case 6:
+                        qrmatrix[matrixSize - 9, 7] = pixel;
+                        break;
+                }
+            }
+        }
+
+        private static void ApplyAlignementMarker(Bgr[,] qrmatrix)
+        {
+            for (int y = 4; y < 9; y++)
+            {
+                for (int x =20; x > 15; x--)
+                {
+
+                    if (x == 20 || x == 16 || y == 4 || y == 8)
+                    {
+                        qrmatrix[y, x] = new Bgr(0, 0, 0);
+                    }
+                    else if (x == 18 && y == 6)
+                    {
+                        qrmatrix[y, x] = new Bgr(0, 0, 0);
+                    }
+                    else
+                    {
+                        qrmatrix[y, x] = new Bgr(255, 255, 255);
+                    }
+                    
+                }
+            }
+        }
+
+        private static void WriteData(Bgr[,] qrmatrix, String data)
+        {
+            int matrixSize = qrmatrix.GetLength(0);
+            bool bottomToTop = true;
+            int offsetx = 0;
+            int n = 0;
+            int topMax = matrixSize - 9;
+            int bottomMin = 0;
+            int rightMax = matrixSize - 1;
+            int rows = (matrixSize -1)/2;
+            for (int i = 0; i < rows; i++)
+            {
+                for (int y = bottomToTop ? bottomMin : topMax-1; bottomToTop ? y < topMax : y >= bottomMin; y += bottomToTop ? 1 : -1)
+                {
+                    for (int x = rightMax - offsetx;
+                         x > rightMax - 2 - offsetx;
+                        x += -1)
+                    {
+                        int color;
+                        try { color = (data[n] == '0') ? 255 : 0;}
+                        catch (Exception e)
+                        {
+                            color = 255;
+                        }
+                        Bgr pixel = new Bgr(color, color, color);
+                        if (i == 4 && matrixSize == 25)
+                        {
+                            if (y >= 4 && y < 9 && x== rightMax - 1 - offsetx)
+                            {
+                                qrmatrix[y, x] = pixel;
+                                n++;
+                            }
+                            else if (y < 4 || y >=9)
+                            {
+                                if (y > matrixSize - 8)
+                                {
+                                    qrmatrix[y+1, x] = pixel;
+                                }
+                                else
+                                {
+                                    qrmatrix[y, x] = pixel;
+                                }
+                                n++;
+                            }
+                        }
+                        else if (y >= 4 && x<=20 && x>15 && matrixSize == 25)
+                        {
+                            if(y+5 >= topMax) continue;
+                            qrmatrix[y + 5, x] = pixel;
+                            n++;
+                        }
+                        else if (y > matrixSize - 8)
+                        {
+                            qrmatrix[y+1, x] = pixel;
+                            n++;
+                        }
+                        else if (x < 7)
+                        {
+                            qrmatrix[y, x-1] = pixel;
+                            n++;
+                        }
+                        else
+                        {
+                            qrmatrix[y, x] = pixel;
+                            n++;
+                        }
+                    }
+                }
+                bottomToTop = !bottomToTop;
+                offsetx += 2;
+                if(matrixSize == 25)
+                {
+                    if (i >= 7)
+                    {
+                        topMax = matrixSize - 9;
+                        bottomMin = 8;
+                    }
+                    else if (i >= 3)
+                    {
+                        topMax = matrixSize - 1;
+                    }
+                }
+                else
+                {
+                    if (i > 4)
+                    {
+                        topMax = 12;
+                        bottomMin = 8;
+                    }
+                    else if (i > 2) topMax = 20;
+                }
+                
+            }
+
+        }
+
+        private static void ApplyMask(Bgr[,] qrmatrix)
+        {
+            int matrixsize = qrmatrix.GetLength(0);
+            for (int y = 0; y < matrixsize; y++)
+            {
+                for (int x = 0; x < matrixsize; x++)
+                {
+                    if (matrixsize == 25 && y > 3 && y < 9 && x > 15 && x < 21 ||
+                        x < 9 && (y < 8 || y > matrixsize - 10) || (y == matrixsize - 7 || x == 6) ||
+                        x > matrixsize - 9 && y > matrixsize - 10) continue;
+                    int color = (qrmatrix[y, x].R == 255) ^ ((y + x) % 2 == 0) ? 255 : 0;
+                    Bgr pixel = new Bgr(color, color, color);
+                    qrmatrix[y, x] = pixel;
+
+                }
+            }
+        }
+
+
+        #endregion
 
         #endregion
     }

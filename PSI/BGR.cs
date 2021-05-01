@@ -10,7 +10,7 @@
     /// <remarks>
     /// Notre pixel est de type BGR et non pas RGB parce qu'en BMP les pixels sont codés de cette manière
     /// </remarks>
-    readonly struct Bgr
+    public readonly struct Bgr
     {
         /// <summary>
         /// Pixel de couleurs BGR (Blue Green Red)

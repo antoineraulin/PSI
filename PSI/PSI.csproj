@@ -70,6 +70,9 @@
     <Compile Include="ScaleDialog.xaml.cs">
       <DependentUpon>ScaleDialog.xaml</DependentUpon>
     </Compile>
+    <Compile Include="QRWindow.xaml.cs">
+      <DependentUpon>QRWindow.xaml</DependentUpon>
+    </Compile>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -94,6 +97,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="ScaleDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="QRWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -205,6 +212,9 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="assets\stegano.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="assets\qr.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

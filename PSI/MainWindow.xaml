@@ -10,7 +10,7 @@
         ResizeMode="CanResizeWithGrip"
         Background="Transparent"
         WindowStyle="None"
-        Title="PSI" Height="450" Width="800" MinHeight="450" MinWidth="800">
+        Title="PSI" Height="600" Width="1000" MinHeight="450" MinWidth="800">
     <Window.CommandBindings>
         <CommandBinding Command="Open" Executed="OpenFile_Click" />
         <CommandBinding Command="Undo" Executed="Undo_OnClick" />
@@ -50,6 +50,11 @@
                         <Image Source="assets/fractal.png" Width="18" Height="18" />
                     </MenuItem.Icon>
                 </MenuItem>
+                <MenuItem Header="Générer un QR code" Click="QR_OnClick">
+                    <MenuItem.Icon>
+                        <Image Source="assets/qr.png" Width="18" Height="18" />
+                    </MenuItem.Icon>
+                </MenuItem>
                 <MenuItem Header="_Image de la banque d'images..." Name="menuStock">
                     <MenuItem.Icon>
                         <Image Source="assets/image_folder.png" Width="18" Height="18" />
@@ -62,7 +67,7 @@
                     </MenuItem.Icon>
                 </MenuItem>
                 <Separator />
-                <MenuItem Header="_Quitter">
+                <MenuItem Header="_Quitter" Click="Exit_OnClick">
                     <MenuItem.Icon>
                         <Image Source="assets/close.png" Width="18" Height="18" />
                     </MenuItem.Icon>
@@ -83,6 +88,7 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="50" />
                     <RowDefinition Height="*" />
+                    <RowDefinition Height="60" />
                     <RowDefinition Height="20"/>
                 </Grid.RowDefinitions>
                 <Label Content="Ouvrir une image personnalisée" FontSize="16" HorizontalAlignment="Center" Margin="10,10,0,0" VerticalAlignment="Top"/>
@@ -104,7 +110,7 @@
                         </StackPanel>
                     </Grid>
                 </Border>
-                <Grid Grid.ColumnSpan="2" HorizontalAlignment="Stretch"  Grid.Row="2" VerticalAlignment="Stretch" Background="DodgerBlue">
+                <Grid Grid.ColumnSpan="2" HorizontalAlignment="Stretch"  Grid.Row="3" VerticalAlignment="Stretch" Background="DodgerBlue">
                     <Label Content="Prêt" FontSize="13" Height="20" Padding="8,0,0,0" Foreground="White"/>
                 </Grid>
                 <ListView Grid.Column="1" Grid.Row="1" Name="imageLibraryList"  >
@@ -127,7 +133,10 @@
                         </Style>
                     </ListView.ItemContainerStyle>
                 </ListView>
-
+                <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Orientation="Horizontal">
+<Button Margin="16,8,8,8" Padding="8,1" Click="QR_OnClick">Générer un QR code</Button>
+                    <Button Margin="8" Padding="8,1" Click="Fractal_OnClick" >Générer une fractale</Button>
+                </StackPanel>
             </Grid>
             <Grid Name="ImageEditor" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Visibility="Collapsed"  >
                 <Grid.ColumnDefinitions>

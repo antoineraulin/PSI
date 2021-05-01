@@ -6,17 +6,13 @@ using System.Threading.Tasks;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.WindowsRuntime;
 using System.Windows.Input;
 
 namespace PSI
 {
-    class MyImage
+    public class MyImage
     {
-
-        // todo
-        // - faire la transformation en noir et blanc en plus du nuance de gris
-        // - Rotation
-        // - Miroir
 
 
         #region PRIVATE
@@ -887,9 +883,9 @@ namespace PSI
             byte[] hideFile = File.ReadAllBytes(@".\toHide.bmp");
             byte[] originalFile = File.ReadAllBytes(@".\stegano.bmp");
             byte[] hideImageBytes = hideFile.Skip(imageToHide.offset).Take(imageToHide.realImageSize).ToArray();
-            for (int i = offset; i < offset + realImageSize; i++)
+            for (int i = rescaled.offset; i < rescaled.offset + rescaled.realImageSize; i++)
             {
-                int j = i - offset;
+                int j = i - rescaled.offset;
                 if (j < hideImageBytes.Length)
                 {
                     byte newLow = (byte)(hideImageBytes[j] & 0xF0);
@@ -960,14 +956,15 @@ namespace PSI
                         res = 44;
                         break;
                     default:
-                        throw new ArgumentException("Caractère non reconnu");
+                        res = 36;
+                        break;
                 }
             }
             return res;
 
         }
 
-        public static void GenerateQRCode(String input)
+        public static MyImage GenerateQRCode(String input)
         {
             // Encodages préliminaires
             int inputLength = input.Length;
@@ -1113,8 +1110,7 @@ namespace PSI
             ApplyMask(qrmatrix);
 
             MyImage qrFinal = new MyImage(qrmatrix, matrixSize, matrixSize);
-            qrFinal.From_Image_To_File("./qr.bmp");
-            Process.Start(@"C:\Users\antoi\AppData\Local\Programs\Microsoft VS Code\bin\code", @"C:\Users\antoi\Documents\PSI\PSI\bin\Debug\qr.bmp");
+            return qrFinal;
 
 
         }

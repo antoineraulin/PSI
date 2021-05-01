@@ -33,8 +33,7 @@ namespace PSI
         public MainWindow()
         {
             InitializeComponent();
-            /*images = new List<LibraryImage>();
-            //string projectDirectory = Directory.GetParent(workingDirectory).Parent.Parent.FullName;
+            images = new List<LibraryImage>();
             foreach (String filePath in Directory.GetFiles("..\\..\\image_library\\", "*.bmp"))
             {
                 LibraryImage img = new LibraryImage(filePath);
@@ -47,10 +46,8 @@ namespace PSI
             imageLibraryList.ItemsSource = images;
 
             this.titlebar.MouseLeftButtonDown +=
-                new MouseButtonEventHandler(title_MouseLeftButtonDown);*/
+                new MouseButtonEventHandler(title_MouseLeftButtonDown);
 
-            MyImage.GenerateQRCode("PROJET PSI ESILV");
-            Environment.Exit(0);
         }
 
         private void MenuImageLibraryOnClick(object sender, RoutedEventArgs e)
@@ -204,7 +201,8 @@ namespace PSI
             {
                 if (double.TryParse(inputDialog.Answer, out double angle))
                 {
-                    RunMyImageOperation("Rotation", () => currentImage.RotationV2(angle, radian: inputDialog.isRadian));
+                    bool isRadian = inputDialog.isRadian;
+                    RunMyImageOperation("Rotation", () => currentImage.RotationV2(angle, radian: isRadian));
                 }
                 
                 
@@ -219,7 +217,8 @@ namespace PSI
             {
                 if (int.TryParse(inputDialog.Height, out int height) && int.TryParse(inputDialog.Width, out int width))
                 {
-                    RunMyImageOperation("Redimensionner", () => currentImage.ResizeAntialiasing(width, height));
+                    if(inputDialog.isAntialiased) RunMyImageOperation("Redimensionner", () => currentImage.ResizeAntialiasing(width, height));
+                    else RunMyImageOperation("Redimensionner", () => currentImage.Resize(width, height));
                 }
             }
 
@@ -304,9 +303,30 @@ namespace PSI
 
         }
 
+        private void QR_OnClick(object sender, RoutedEventArgs e)
+        {
+
+            QRWindow inputDialog = new QRWindow();
+            currentFilePath = "./qr.bmp";
+            if (inputDialog.ShowDialog() == true)
+            {
+                MainMenu.Visibility = Visibility.Collapsed;
+                ImageEditor.Visibility = Visibility.Visible;
+                String text = inputDialog.Text.ToUpper();
+RunMyImageOperation("Génération QR Code", () => MyImage.GenerateQRCode(text));
+                    
+            }
+
+        }
+
         private void Undo_OnClick(object sender, RoutedEventArgs e)
         {
             CtrlZ();
+        }
+
+        private void Exit_OnClick(object sender, RoutedEventArgs e)
+        {
+            SystemCommands.CloseWindow(this);
         }
 
         private void CommandBinding_CanExecute_1(object sender, CanExecuteRoutedEventArgs e)
@@ -392,9 +412,17 @@ namespace PSI
         {
             
                 BottomBar.Background = ready ? Brushes.DodgerBlue : Brushes.OrangeRed;
+                if(currentImage != null)
+                {
+                    BottomBarLeftLabel.Content =
+                        $"{action} - {currentFilePath.Split('\\').Last()} - {currentImage.height}x{currentImage.width}";
+                }
+                else
+                {
                 BottomBarLeftLabel.Content =
-                    $"{action} - {currentFilePath.Split('\\').Last()} - {currentImage.height}x{currentImage.width}";
-            
+                    $"{action} - {currentFilePath.Split('\\').Last()}";
+            }
+
         }
 
         private void RunMyImageOperation(String operationTitle, Func<MyImage> operation)
@@ -402,11 +430,13 @@ namespace PSI
             // On met a jour la barre du bas avec une couleur orange et un texte qui indique qu'une opération sur l'image est en cours.
             SetBottomBarState(ready: false, action: $"{operationTitle}...");
             // Sauvegarde de l'état actuel dans l'historique pour pouvoir revenir en arrière ultérieurement.
+            if(currentImage != null)
             UpdateHistory();
             // Pour ne pas empêcher la manipulation de l'UI pendant le calcul on réalise l'opération sur un thread à part.
             Thread backgroundThread = new Thread(() =>
             {
-                MyImage tmp = operation();
+                MyImage tmp;
+                 tmp   = operation();
                 tmp.From_Image_To_File(@".\tmp.bmp");
                 currentImage = tmp;
                 this.Dispatcher.BeginInvoke(new Action(() => { histogram.Source = null; }));

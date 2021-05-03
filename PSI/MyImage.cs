@@ -1236,7 +1236,7 @@ namespace PSI
                 {
                     for (int x = rightMax - offsetx;
                          x > rightMax - 2 - offsetx;
-                        x += -1)
+                        x--)
                     {
                         int color;
                         try { color = (data[n] == '0') ? 255 : 0;}

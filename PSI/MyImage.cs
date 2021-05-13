@@ -112,7 +112,8 @@ namespace PSI
             Console.WriteLine(header[1]);
             if (header[0] != 66 || header[1] != 77) //on vérifie que le fichier est bien un format bitmap
             {
-                throw new ArgumentException("Le fichier fournit n'est pas un Bitmap");
+                System.Windows.Forms.MessageBox.Show("Le fichier fournit n'est pas un Bitmap.\nJe ne souhaite plus continuer à travailler avec vous.\n\nAu revoir.");
+                Environment.Exit(0);
             }
 
             Console.WriteLine(@"C'est un bitmap");

@@ -30,6 +30,7 @@ namespace PSI
         private MyImage currentImage;
         private List<LibraryImage> images;
         private String currentFilePath;
+        private bool onGoing = false;
         public MainWindow()
         {
             InitializeComponent();
@@ -176,145 +177,224 @@ namespace PSI
 
         private void Miroir_OnClick(object sender, RoutedEventArgs e)
         {
-            SetBottomBarState(ready: false, action:"Miroir vertical...");
-            UpdateHistory();
-            MyImage mirror = currentImage.EffetMiroir();
-            mirror.From_Image_To_File(@".\tmp.bmp");
-            currentImage = mirror;
-            Uri fileUri = new Uri(Path.Combine(Directory.GetCurrentDirectory(), @".\tmp.bmp"));
-            BitmapImage preview = new BitmapImage();
-            preview.BeginInit();
-            preview.CacheOption = BitmapCacheOption.OnLoad;
-            preview.CreateOptions = BitmapCreateOptions.IgnoreImageCache;
-            preview.UriSource = fileUri;
-            preview.EndInit();
-            ImagePreview.Source = preview;
-            SetBottomBarState(ready: true);
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
+            if (!onGoing)
+            {
+                onGoing = true;
+                SetBottomBarState(ready: false, action: "Miroir vertical...");
+                UpdateHistory();
+                MyImage mirror = currentImage.EffetMiroir();
+                mirror.From_Image_To_File(@".\tmp.bmp");
+                currentImage = mirror;
+                Uri fileUri = new Uri(Path.Combine(Directory.GetCurrentDirectory(), @".\tmp.bmp"));
+                BitmapImage preview = new BitmapImage();
+                preview.BeginInit();
+                preview.CacheOption = BitmapCacheOption.OnLoad;
+                preview.CreateOptions = BitmapCreateOptions.IgnoreImageCache;
+                preview.UriSource = fileUri;
+                preview.EndInit();
+                ImagePreview.Source = preview;
+                SetBottomBarState(ready: true);
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                onGoing = false;
+            }
+            
         }
 
         private void Rotate_OnClick(object sender, RoutedEventArgs e)
         {
-            RotationDialog inputDialog = new RotationDialog();
-            if (inputDialog.ShowDialog() == true)
+            if (!onGoing)
             {
-                if (double.TryParse(inputDialog.Answer, out double angle))
+                onGoing = true;
+                RotationDialog inputDialog = new RotationDialog();
+                if (inputDialog.ShowDialog() == true)
                 {
-                    bool isRadian = inputDialog.isRadian;
-                    RunMyImageOperation("Rotation", () => currentImage.RotationV2(angle, radian: isRadian));
+                    if (double.TryParse(inputDialog.Answer, out double angle))
+                    {
+                        bool isRadian = inputDialog.isRadian;
+                        RunMyImageOperation("Rotation", () => currentImage.RotationV2(angle, radian: isRadian));
+                    }
+
+
                 }
-                
-                
+
+                onGoing = false;
             }
-                
+
         }
 
         private void Scale_OnClick(object sender, RoutedEventArgs e)
         {
-            ScaleDialog inputDialog = new ScaleDialog();
-            if (inputDialog.ShowDialog() == true)
+            if (!onGoing)
             {
-                if (int.TryParse(inputDialog.Height, out int height) && int.TryParse(inputDialog.Width, out int width))
+                onGoing = true;
+                ScaleDialog inputDialog = new ScaleDialog();
+                if (inputDialog.ShowDialog() == true)
                 {
-                    if(inputDialog.isAntialiased) RunMyImageOperation("Redimensionner", () => currentImage.ResizeAntialiasing(width, height));
-                    else RunMyImageOperation("Redimensionner", () => currentImage.Resize(width, height));
+                    if (int.TryParse(inputDialog.Height, out int height) &&
+                        int.TryParse(inputDialog.Width, out int width))
+                    {
+                        if (height > 0 && width > 0)
+                        {
+                            if (inputDialog.isAntialiased)
+                                RunMyImageOperation("Redimensionner",
+                                    () => currentImage.ResizeAntialiasing(width, height));
+                            else RunMyImageOperation("Redimensionner", () => currentImage.Resize(width, height));
+                        }
+
+                    }
                 }
+
+                onGoing = false;
             }
 
         }
 
         private void BW_OnClick(object sender, RoutedEventArgs e)
         {
-            RunMyImageOperation("Noir et Blanc", currentImage.ToBW);
+            if (!onGoing)
+            {
+                onGoing = true;
+                RunMyImageOperation("Noir et Blanc", currentImage.ToBW);
+                onGoing = false;
+            }
         }
 
         private void Grayscale_OnClick(object sender, RoutedEventArgs e)
         {
-            RunMyImageOperation("Nuance de gris", currentImage.ToGrayscale);
+            if (!onGoing)
+            {
+                onGoing = true;
+                RunMyImageOperation("Nuance de gris", currentImage.ToGrayscale);
+                onGoing = false;
+            }
         }
 
         private void Blur_OnClick(object sender, RoutedEventArgs e)
         {
-            double[,] kernel = currentImage.MatriceKernel(2);
-            RunMyImageOperation("Flou Gaussien", () => currentImage.calculateKernel(kernel));
+            if (!onGoing)
+            {
+                onGoing = true;
+                double[,] kernel = currentImage.MatriceKernel(2);
+                RunMyImageOperation("Flou Gaussien", () => currentImage.calculateKernel(kernel));
+                onGoing = false;
+            }
         }
 
         private void Edge_OnClick(object sender, RoutedEventArgs e)
         {
-            double[,] kernelx =
+            if (!onGoing)
             {
-                {-1, 0, 1},
-                {-2, 0, 2},
-                {-1, 0, 1}
-            };
-            double[,] kernely = {
-                {-1, -2, -1},
-                {0, 0, 0},
-                { 1, 2, 1}
-            };
-            RunMyImageOperation("Détection des contours", () => currentImage.calculateKernel(kernelx, kernely));
+                onGoing = true;
+                double[,] kernelx =
+                {
+                    {-1, 0, 1},
+                    {-2, 0, 2},
+                    {-1, 0, 1}
+                };
+                double[,] kernely =
+                {
+                    {-1, -2, -1},
+                    {0, 0, 0},
+                    {1, 2, 1}
+                };
+                RunMyImageOperation("Détection des contours", () => currentImage.calculateKernel(kernelx, kernely));
+                onGoing = false;
+            }
         }
 
         private void Sharp_OnClick(object sender, RoutedEventArgs e)
         {
-            double[,] kernel = currentImage.MatriceKernel(3);
-            RunMyImageOperation("Renforcement des bords", () => currentImage.calculateKernel(kernel));
+            if (!onGoing)
+            {
+                onGoing = true;
+                double[,] kernel = currentImage.MatriceKernel(3);
+                RunMyImageOperation("Renforcement des bords", () => currentImage.calculateKernel(kernel));
+                onGoing = false;
+            }
         }
 
         private void Stegano_Encode_OnClick(object sender, RoutedEventArgs e)
         {
-            OpenFileDialog openFileDialog = new OpenFileDialog();
-            openFileDialog.Filter = "BMP (*.bmp;*.BMP)|*.bmp;*.BMP";
-            openFileDialog.Title = "Dissimuler une image dans l'image actuelle";
-            if (openFileDialog.ShowDialog() == true)
+            if (!onGoing)
             {
-                MyImage toHide = new MyImage(openFileDialog.FileName);
-                RunMyImageOperation("Stéganographie - Encode", () => currentImage.SteganographyEncode(toHide));
+                onGoing = true;
+                OpenFileDialog openFileDialog = new OpenFileDialog();
+                openFileDialog.Filter = "BMP (*.bmp;*.BMP)|*.bmp;*.BMP";
+                openFileDialog.Title = "Dissimuler une image dans l'image actuelle";
+                if (openFileDialog.ShowDialog() == true)
+                {
+                    MyImage toHide = new MyImage(openFileDialog.FileName);
+                    RunMyImageOperation("Stéganographie - Encode", () => currentImage.SteganographyEncode(toHide));
+                }
+
+                onGoing = false;
             }
-            
+
         }
 
         private void Stegano_Decode_OnClick(object sender, RoutedEventArgs e)
         {
-            RunMyImageOperation("Stéganographie - Decode", () => currentImage.SteganographyDecode());
-
+            if (!onGoing)
+            {
+                onGoing = true;
+                RunMyImageOperation("Stéganographie - Decode", () => currentImage.SteganographyDecode());
+                onGoing = false;
+            }
 
         }
 
         private void Fractal_OnClick(object sender, RoutedEventArgs e)
         {
-
-            FractalDialog inputDialog = new FractalDialog();
-            currentFilePath = "./fractale.bmp";
-            if (inputDialog.ShowDialog() == true)
+            if (!onGoing)
             {
-                MainMenu.Visibility = Visibility.Collapsed;
-                ImageEditor.Visibility = Visibility.Visible;
-                if (int.TryParse(inputDialog.Height, out int height) &&
-                    int.TryParse(inputDialog.Width, out int width) &&
-                    int.TryParse(inputDialog.Iterations, out int iterations))
+                onGoing = true;
+                FractalDialog inputDialog = new FractalDialog();
+                currentFilePath = "./fractale.bmp";
+                if (inputDialog.ShowDialog() == true)
                 {
-                    if(inputDialog.isMandelbrot) RunMyImageOperation("Génération fractale", () => MyImage.MandelBrot(iterations, width, height));
-                    else RunMyImageOperation("Génération fractale", () => MyImage.Julia(iterations, width, height));
+                    MainMenu.Visibility = Visibility.Collapsed;
+                    ImageEditor.Visibility = Visibility.Visible;
+                    if (int.TryParse(inputDialog.Height, out int height) &&
+                        int.TryParse(inputDialog.Width, out int width) &&
+                        int.TryParse(inputDialog.Iterations, out int iterations))
+                    {
+                        if (width > 0 && height > 0 && iterations > 0)
+                        {
+                            if (inputDialog.isMandelbrot)
+                                RunMyImageOperation("Génération fractale",
+                                    () => MyImage.MandelBrot(iterations, width, height));
+                            else
+                                RunMyImageOperation("Génération fractale",
+                                    () => MyImage.Julia(iterations, width, height));
+
+                        }
+                    }
+
                 }
-                    
+
+                onGoing = false;
             }
 
         }
 
         private void QR_OnClick(object sender, RoutedEventArgs e)
         {
-
-            QRWindow inputDialog = new QRWindow();
-            currentFilePath = "./qr.bmp";
-            if (inputDialog.ShowDialog() == true)
+            if (!onGoing)
             {
-                MainMenu.Visibility = Visibility.Collapsed;
-                ImageEditor.Visibility = Visibility.Visible;
-                String text = inputDialog.Text.ToUpper();
-RunMyImageOperation("Génération QR Code", () => MyImage.GenerateQRCode(text));
-                    
+                onGoing = true;
+                QRWindow inputDialog = new QRWindow();
+                currentFilePath = "./qr.bmp";
+                if (inputDialog.ShowDialog() == true)
+                {
+                    MainMenu.Visibility = Visibility.Collapsed;
+                    ImageEditor.Visibility = Visibility.Visible;
+                    String text = inputDialog.Text.ToUpper();
+                    RunMyImageOperation("Génération QR Code", () => MyImage.GenerateQRCode(text));
+
+                }
+
+                onGoing = false;
             }
 
         }
